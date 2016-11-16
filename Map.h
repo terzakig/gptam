@@ -1,16 +1,9 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
 //
-// This header declares the Map class.
-// This is pretty light-weight: All it contains is
-// a vector of MapPoints and a vector of KeyFrames.
+//  University of Portsmouth
+
 //
-// N.b. since I don't do proper thread safety,
-// everything is stored as lists of pointers,
-// and map points are not erased if they are bad:
-// they are moved to the trash list. That way
-// old pointers which other threads are using are not 
-// invalidated!
+// Code based on PTAM by Klein and Murray
 
 #ifndef __MAP_H
 #define __MAP_H

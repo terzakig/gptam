@@ -1,5 +1,8 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
 #ifndef __CALIB_CORNER_PATCH_H
 #define __CALIB_CORNER_PATCH_H

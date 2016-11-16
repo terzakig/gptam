@@ -1,3 +1,9 @@
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
 #include "OpenGL.h"
 #include "GLWindow2.h"
 #include "GLWindowMenu.h"

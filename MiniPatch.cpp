@@ -1,4 +1,9 @@
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
 #include "MiniPatch.h"
 
 

@@ -1,5 +1,8 @@
-// -*- c++ -*- 
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
 // HomographyInit.h 
 // Declares the HomographyInit class and a few helper functions. 

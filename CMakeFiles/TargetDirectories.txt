@@ -1,8 +1,0 @@
-/home/george/GGUI/CMakeFiles/install.dir
-/home/george/GGUI/CMakeFiles/list_install_components.dir
-/home/george/GGUI/CMakeFiles/rebuild_cache.dir
-/home/george/GGUI/CMakeFiles/edit_cache.dir
-/home/george/GGUI/CMakeFiles/gcalibrator.dir
-/home/george/GGUI/CMakeFiles/gptam.dir
-/home/george/GGUI/CMakeFiles/install/strip.dir
-/home/george/GGUI/CMakeFiles/install/local.dir

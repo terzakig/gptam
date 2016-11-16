@@ -1,15 +1,10 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 // 
-// This file declares the MapPoint class
-// 
-// The map is made up of a bunch of mappoints.
-// Each one is just a 3D point in the world;
-// it also includes information on where and in which key-frame the point was
-// originally made from, so that pixels from that keyframe can be used
-// to search for that point.
-// Also stores stuff like inlier/outlier counts, and privat information for 
-// both Tracker and MapMaker.
+
 
 #ifndef __MAP_POINT_H
 #define __MAP_POINT_H

@@ -1,22 +1,10 @@
-//-*- C++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 // 
-// This header declares the Tracker class.
-// The Tracker is one of main components of the system,
-// and is responsible for determining the pose of a camera
-// from a video feed. It uses the Map to track, and communicates 
-// with the MapMaker (which runs in a different thread)
-// to help construct this map.
-//
-// Initially there is no map, so the Tracker also has a mode to 
-// do simple patch tracking across a stereo pair. This is handled 
-// by the TrackForInitialMap() method and associated sub-methods. 
-// Once there is a map, TrackMap() is used.
-//
-// Externally, the tracker should be used by calling TrackFrame()
-// with every new input video frame. This then calls either 
-// TrackForInitialMap() or TrackMap() as appropriate.
-//
+
 
 #ifndef __TRACKER_H
 #define __TRACKER_H

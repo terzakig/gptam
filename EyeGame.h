@@ -1,5 +1,9 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code in this file is practically unaltered from the original 
+// PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 //
 // EyeGame.h
 // Declares the EyeGame class

@@ -1,4 +1,10 @@
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// This Code is functionally unaltered from 
+// the original PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
 #include "EyeGame.h"
 
 #include "GCVD/GLHelpers.h"

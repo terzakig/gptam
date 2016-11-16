@@ -1,5 +1,9 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// This file was practically lifted verbatim (no functional modifications) 
+// from PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
 // LevelHelpers.h - a few handy tools to ease using levels.
 // The important thing is the XXXPos functions, which convert

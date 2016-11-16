@@ -1,5 +1,9 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on original PTAM code by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
 #ifndef __BUNDLE_H
 #define __BUNDLE_H
 // Bundle.h

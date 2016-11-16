@@ -1,15 +1,10 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
-
+//   George Terzakis 2016
 //
-// This header declares the MapMaker class
-// MapMaker makes and maintains the Map struct
-// Starting with stereo initialisation from a bunch of matches
-// over keyframe insertion, continual bundle adjustment and 
-// data-association refinement.
-// MapMaker runs in its own thread, although some functions
-// (notably stereo init) are called by the tracker and run in the 
-// tracker's thread.
+//     University of Portsmouth
+//
+
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
 
 #ifndef __MAPMAKER_H
 #define __MAPMAKER_H

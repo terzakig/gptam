@@ -1,5 +1,8 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
 #ifndef __GL_WINDOW_MENU_H
 #define __GL_WINDOW_MENU_H

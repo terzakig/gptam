@@ -1,4 +1,10 @@
-// Copyright 2008 Isis Innovation Limited
+//        George Terzakis 2016
+//
+//       University of Portsmouth
+//
+//
+// Cide based on PTAM by Klein and Murray ( Copyright 2008 Isis Innovation Limited )
+
 #include "MapMaker.h"
 #include "MapPoint.h"
 #include "Bundle.h"

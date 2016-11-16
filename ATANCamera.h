@@ -1,11 +1,10 @@
-// *-* c++ *-*
-// Copyright 2008 Isis Innovation Limited
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
-// N-th implementation of a camera model
-// GK 2007
-// Evolved a half dozen times from the CVD-like model I was given by
-// TWD in 2000
-// 
+
 // This one uses the ``FOV'' distortion model of
 // Deverneay and Faugeras, Straight lines have to be straight, 2001
 //

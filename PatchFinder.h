@@ -1,9 +1,10 @@
-// -*- c++ -*-
-// Copyright 2008 Isis Innovation Limited
-// 
-// This header declares the PatchFinder class.
-// This is quite a low-level class.
-// 
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
+
+//
 // The purpose of the PatchFinder is to find a map point in a new view. 
 // This proceeds in multiple stages:
 // 1. A warping matrix appropriate for the current view is calculated,

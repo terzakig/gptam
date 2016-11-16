@@ -1,4 +1,8 @@
-// some simple added utils that existed in CVD 
+// George Terzakis 2016
+//
+// University of Portsmouth
+//
+// some simple additional utils that implement CVD funcationality 
 // and have to be added here...
 
 #ifndef ADDED_UTILS_H

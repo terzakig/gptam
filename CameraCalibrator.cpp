@@ -1,6 +1,8 @@
-// George Terzakis 2016 - Tracking and mapping with OpenCV - GTAM Calibrator
+// George Terzakis 2016
 //
-// Code  based on PTAM by Klein and Murray 
+// University of Portsmouth
+//
+// Code based on PTAM by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 
 #include "OpenGL.h"
 #include "Persistence/instances.h"

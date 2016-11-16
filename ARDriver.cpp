@@ -2,7 +2,7 @@
 //
 //  		University of Portsmouth      
 
-// This file is a modification of the original PTAM code by Klein and Murrary (Isis Innovation Limited)
+// This file is a slight modification of the original PTAM code by Klein and Murrary (Isis Innovation Limited)
 
 #define GL_GLEXT_PROTOTYPES 1
 
