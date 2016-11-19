@@ -46,8 +46,8 @@ int main()
   atexit(GUI.StopParserThread); // Clean up readline when program quits
   
   
-  try
-    {
+  try {
+    
       CameraCalibrator c;
       
       c.Run();

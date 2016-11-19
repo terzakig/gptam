@@ -202,7 +202,7 @@ void Tracker::TrackFrame(cv::Mat_<uchar> &imFrame, bool bDraw, cv::Mat &rgbFrame
 	     mMapMaker.QueueSize() < 3
 	  ) {
 	      //mMessageForUser << " Adding key-frame.";
-	      cout <<"Adding keyframe! "<<endl;
+	      //cout <<"Adding keyframe! "<<endl;
 	      AddNewKeyFrame();
 	    }
     }
@@ -731,7 +731,7 @@ void Tracker::TrackMap() {
 		dOverrideSigma = 1.0;
 	      
 	      // Calculate and apply the pose update...
-	      cv::Vec<float, 6> v6Update = CalcPoseUpdate(vIterationSet, dOverrideSigma);
+	      cv::Vec<float, 6> v6Update = CalcPoseUpdate(vIterationSet, dOverrideSigma /*, true*/);
 	      mse3CamFromWorld = SE3<>::exp(v6Update) * mse3CamFromWorld;
 	    }
 	}
@@ -1047,7 +1047,7 @@ cv::Vec<float, 6> Tracker::CalcPoseUpdate(vector<TrackerData::Ptr> vTD, double d
       
       // Inlier/outlier accounting, only really works for cut-off estimators such as Tukey.
       // George: Or with a manual threshold... But we already have RANSAC for this...
-      if(dWeight == 0.0) {
+      if(dWeight < 10e-3) {
 	
 	  if(bMarkOutliers) pTD->Point->nMEstimatorOutlierCount++;
 	  

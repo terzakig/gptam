@@ -126,31 +126,39 @@ flag_IsStopped = false; // just entered the main loop function
       
       CHECK_RESET;
       
-      //cout<<"DEBUG: Adjusting recent "<<endl;
+      cout<<"DEBUG: Adjusting recent "<<endl;
       // Should we run local bundle adjustment?
-      if(!mbBundleConverged_Recent && QueueSize() == 0)   BundleAdjustRecent();   
+      if(!mbBundleConverged_Recent && QueueSize() == 0)   {
+	BundleAdjustRecent();   
+	//HandleBadPoints();
+      }
+	
       
       CHECK_RESET;
-      //cout <<"DEBUG: Attempting to refind newlymade"<<endl;
+      cout <<"DEBUG: Attempting to refind newlymade"<<endl;
       // Are there any newly-made map points which need more s from older key-frames?
       if(mbBundleConverged_Recent && QueueSize() == 0) ReFindNewlyMade();  
       
       CHECK_RESET;
-      //cout <<"DEBUG: Now Bundle adjusting ALL."<<endl;
+      cout <<"DEBUG: Now Bundle adjusting ALL."<<endl;
       // Run global bundle adjustment?
-      if(mbBundleConverged_Recent && !mbBundleConverged_Full && QueueSize() == 0) BundleAdjustAll();
+      if(mbBundleConverged_Recent && !mbBundleConverged_Full && QueueSize() == 0) { 
+	BundleAdjustAll();
+	//HandleBadPoints();
+      }
       
       CHECK_RESET;
-      //cout<<"DEBUG: Refinding from Failure Queue. "<<endl;
+      cout<<"DEBUG: Refinding from Failure Queue. "<<endl;
       // Very low priorty: re-find measurements marked as outliers
       if(mbBundleConverged_Recent && mbBundleConverged_Full && rand()%20 == 0 && QueueSize() == 0)
 	ReFindFromFailureQueue();
       //cout <<"DEBUG: handling bad points."<<endl;
       CHECK_RESET;
+      cout <<"DEBUG: Handling bad points again...."<<endl;
       HandleBadPoints();
       
       CHECK_RESET;
-      //cout<<"DEBUG: Adding Keyframe from top of queue."<<endl;
+      cout<<"DEBUG: Adding Keyframe from top of queue."<<endl;
       // Any new key-frames to be added?
       if(QueueSize() > 0) AddKeyFrameFromTopOfQueue(); // Integrate into map data struct, and process
       
@@ -178,41 +186,59 @@ bool MapMaker::ResetDone()
 // they should be flagged as bad, based on tracker feedback.
 void MapMaker::HandleBadPoints()
 {
+  if (mMap.vpPoints.size() == 0) return;
   //cout <<"DEBUG: handling bad points ..."<<endl;
-  std::vector<MapPoint::Ptr> vBadPoints;
-  // Did the tracker see this point as an outlier more often than as an inlier?
+  vector<MapPoint::Ptr> vGoodPoints;
   for(unsigned int i = 0; i < mMap.vpPoints.size(); i++) {
     
+      //if (mMap.vpPoints[i].use_count() > 0) continue; 
+	
       MapPoint::Ptr pMP = mMap.vpPoints[i];
       
+      
+      // Did the tracker see this point as an outlier more often than as an inlier?
       if( pMP->nMEstimatorOutlierCount > 20 && pMP->nMEstimatorOutlierCount > pMP->nMEstimatorInlierCount) {
 	pMP->bBad = true;
-	vBadPoints.push_back(pMP);
+	
       }
+      // put the bad point in the trash bin
+      if (pMP->bBad) 
+	//vBadPoints.push_back(pMP);
+	mMap.vpPointsTrash.push_back(pMP);
+      else 
+	vGoodPoints.push_back(pMP);
       
   }
   //if (DEBUGBadPoints > 0) cout  <<"Bad point handler found "<<DEBUGBadPoints<<"Bad points "<<endl;
   // All points marked as bad will be erased - erase all records of them
   // from keyframes in which they might have been measured.
-  for(unsigned int i=0; i < mMap.vpPoints.size(); i++)
-      if(mMap.vpPoints[i]->bBad) {
-	MapPoint::Ptr pMP = mMap.vpPoints[i];
-	// erase the point entry from the measurements
-	// of all previously associated keyframes
+  for(unsigned int i=0; i < mMap.vpPointsTrash.size(); i++) {
+    
+    // you never know... It never hurts to check...
+    if(mMap.vpPointsTrash[i].use_count() == 0) continue;
+
+    MapPoint::Ptr pMP = mMap.vpPointsTrash[i];
 	
-	for(unsigned int j=0; j < mMap.vpKeyFrames.size(); j++) {
+    // disengage keyframe links through measurements
+    for(unsigned int j = 0; j < mMap.vpKeyFrames.size(); j++) {
 	  
-	    KeyFrame::Ptr pKF = mMap.vpKeyFrames[j];
-	    // if the point is involved with the keyframe via some measurement,
-	    // then remove pair from the measurement list
-	    if ( pKF->mMeasurements.count(pMP) ) pKF->mMeasurements.erase(pMP); // just erase the bad point from the map! 
+      KeyFrame::Ptr pKF = mMap.vpKeyFrames[j];
+      // I dont know if it is possible to have a dereferenced Keyframe::Ptr 
+      // but it doesnt hurt to check...
+      if ( pKF.use_count() > 0)  
+	if ( pKF->mMeasurements.count(pMP) ) pKF->mMeasurements.erase(pMP); // just erase the bad point from the map! 
 									        // Dont do the trash bin!!!!!
-	  }
-      }
-  // Move bad points to the trash list. (leave it for now...)
-  //mMap.MoveBadPointsToTrash();   // I dont think we need the trash if Mappoints are managed... TODO: Look into it!
-  //mMap.vpPointsTrash.clear(); // That should do it...
+    }
   
+    
+  }
+  
+  //mMap.deleteBadPoints();
+  // just assign the good points to the current mappoint vector of the map
+  // This way we avoid deleting entries in the point vector in a loop 
+  mMap.vpPoints = vGoodPoints;
+  // here's a check of a very likely scenario:
+  if (mMap.vpPoints.size() < 6) RequestReset();
 }
 
 MapMaker::~MapMaker()
@@ -224,8 +250,8 @@ MapMaker::~MapMaker()
     pthread->join();
   }
   cout << "Mapmaker destroyed..." << endl;
-  pthread = NULL; // this should force auto-deletion
-  //delete pthread; // its ugly, but I think it does the job...
+  
+  //delete pthread; 
 }
 
 
@@ -598,6 +624,7 @@ bool MapMaker::InitFromStereo(KeyFrame::Ptr pkF,     // First KF
   if(mMap.vpPoints.size()<4) {
     
     cout << "Too few map points to init."<<endl; 
+    RequestReset();
     return false;
   }
   
@@ -609,9 +636,10 @@ bool MapMaker::InitFromStereo(KeyFrame::Ptr pkF,     // First KF
   pkFirst->MakeKeyFrame_Rest();
   pkSecond->MakeKeyFrame_Rest();
   
-  for(int i=0; i<3; i++) 
+  for(int i=0; i<3; i++) {
    BundleAdjustAll(); // Maybe 3 times would be nice...
-   
+   if (mbResetRequested) return false;
+  }
   // Estimate the feature depth distribution in the first two key-frames
   // (Needed for epipolar search)
   RefreshSceneDepth(pkFirst);
@@ -754,7 +782,7 @@ void MapMaker::AddKeyFrame(KeyFrame::Ptr pKF)
 // Mapmaker's code to handle incoming key-frames.
 void MapMaker::AddKeyFrameFromTopOfQueue()
 {
-   
+  cout <<"DEBUG: Adding KF from Top of Queue"<<endl;
   if(mvpKeyFrameQueue.size() == 0) return;
   
   KeyFrame::Ptr pKF = mvpKeyFrameQueue[0];
@@ -779,7 +807,7 @@ void MapMaker::AddKeyFrameFromTopOfQueue()
   mbBundleConverged_Full = false;
   mbBundleConverged_Recent = false;
 
- 
+  cout <<"DEBUG: Added KF from Top of Queue!"<<endl;
   
 }
 
@@ -832,15 +860,19 @@ bool MapMaker::AddPointEpipolar(KeyFrame::Ptr pKFSrc,
   // to increase reliability
   double dMean = pKFSrc->dSceneDepthMean;
   double dSigma = pKFSrc->dSceneDepthSigma;
-  //double dStartDepth = max(mdWiggleScale, dMean - dSigma);
-  //double dEndDepth = min(40 * mdWiggleScale, dMean + dSigma);
-  double dStartDepth = max(0.0, dMean - dSigma); // trust Weiss for now...
-  double dEndDepth = dMean + dSigma;           // same here...
+  
+  double dStartDepth = max(mdWiggleScale, dMean - dSigma);
+  double dEndDepth = min(40 * mdWiggleScale, dMean + dSigma);
+  // The following "tighter" bounds by Weiss in the ETH version simply yield terrible results,
+  // because they clearly force the tracker to have limited scope in its search
+  
+  //double dStartDepth = max(0.0, dMean - dSigma); 
+  //double dEndDepth = dMean + dSigma;           
   
   
   // Now obtain the source camera center in the TARGET KF coordinate frame 
   // (We need a baseline vector to define the epipolar plane)
-  cv::Vec3f v3CamCenter_TC = pKFTarget->se3CfromW * pKFSrc->se3CfromW.inverse().get_translation(); 
+  cv::Vec<float, 3> v3CamCenter_TC = pKFTarget->se3CfromW * pKFSrc->se3CfromW.inverse().get_translation(); 
   
   // NOTE: Now, "v3CamCenter_TC" and "v3LineDirn_TC" are a basis of the epipolar plane in 
   //       the TARGET K coordina frame!!!
@@ -1023,7 +1055,6 @@ bool MapMaker::AddPointEpipolar(KeyFrame::Ptr pKFSrc,
   pNew->RefreshPixelVectors();
   
   // register the mappoint in the map  
-  pNew->bBad = false; // JUST IN CASE...
   mMap.vpPoints.push_back(pNew);
   // amd register the mappoint also in the queue of newly made points
   mqNewQueue.push(pNew);
@@ -1039,7 +1070,7 @@ bool MapMaker::AddPointEpipolar(KeyFrame::Ptr pKFSrc,
   m.bSubPix = true;
   pKFSrc->mMeasurements[pNew] = m;
 
-  // the etracked measurement
+  // the tracked measurement
   m.Source = KFMeasurement::SRC_EPIPOLAR; // This feature was found with epipolar search
   m.v2RootPos = Finder.GetSubPixPos();
   pKFTarget->mMeasurements[pNew] = m;
@@ -1156,14 +1187,31 @@ void MapMaker::BundleAdjustAll()
   // in this case, all of them
   set<KeyFrame::Ptr> sKFs2Adjust;
   set<KeyFrame::Ptr> sKFsFixed;
-  for(unsigned int i=0; i<mMap.vpKeyFrames.size(); i++)
-    if(mMap.vpKeyFrames[i]->bFixed) sKFsFixed.insert(mMap.vpKeyFrames[i]);
-    else
-      sKFs2Adjust.insert(mMap.vpKeyFrames[i]);
+  for(unsigned int i=0; i<mMap.vpKeyFrames.size(); i++) {
+    
+    //if (mMap.vpKeyFrames[i].use_count() > 0)// you never know...
+      if(mMap.vpKeyFrames[i]->bFixed) sKFsFixed.insert(mMap.vpKeyFrames[i]);
+      else
+	sKFs2Adjust.insert(mMap.vpKeyFrames[i]);
+  }
   
   set<MapPoint::Ptr> sMapPoints;
-  for(unsigned int i=0; i<mMap.vpPoints.size();i++)
-    sMapPoints.insert(mMap.vpPoints[i]);
+  for(unsigned int i=0; i<mMap.vpPoints.size();i++) 
+    //if (mMap.vpPoints[i].use_count()>0) // just in case...
+    if (!mMap.vpPoints[i]->bBad) // there could actually be bad points, so i added the check
+      sMapPoints.insert(mMap.vpPoints[i]);
+  
+  // It is likely that points may not be enough...
+  if (sMapPoints.size() < 6) {
+    cout <<"DEBUG: Too few Mappoints to bundle adjust ALL: "<<sMapPoints.size()<<endl;
+    RequestReset();
+    return; 
+  }    
+  if (sKFs2Adjust.size() == 0) {
+   cout <<"DEBUG: Too few KFs to bundle adjust ALL: "<<sKFs2Adjust.size()<<endl;
+    RequestReset();
+    return;
+  }
   
   BundleAdjust(sKFs2Adjust, sKFsFixed, sMapPoints, false);
 }
@@ -1213,7 +1261,7 @@ void MapMaker::BundleAdjustRecent()
     // if the KF is already in the list, then skip the rest...
       if(sKFs2Adjust.count(*viKF)) continue;
       
-      //bool bInclude = false;
+      //bool bInclude = false; // why on earth do we need to use this???
       meas_it ipMP_Meas;
       for( ipMP_Meas = (*viKF)->mMeasurements.begin(); ipMP_Meas != (*viKF)->mMeasurements.end(); ipMP_Meas++)
 	
@@ -1352,10 +1400,10 @@ void MapMaker::BundleAdjust(set<KeyFrame::Ptr> sAdjustSet, set<KeyFrame::Ptr> sF
       
       if(!bRecent) mbBundleConverged_Full = true;
       
-      cout <<"DEBUG: Recent BA Converged!"<<endl;
+      //cout <<"DEBUG: Recent BA Converged!"<<endl;
   }
-  else
-  cout <<"DEBUG: BA did not converge!"<<endl;
+  //else
+  //cout <<"DEBUG: BA did not converge!"<<endl;
   
   mbBundleRunning = false;
   mbBundleAbortRequested = false;
@@ -1363,6 +1411,7 @@ void MapMaker::BundleAdjust(set<KeyFrame::Ptr> sAdjustSet, set<KeyFrame::Ptr> sF
   // Handle outlier measurements as pairs of bundle IDs : <Mappoint Bundle ID, KF Bundle ID>:
   vector<pair<int,int> > vOutliers = ba.GetOutlierMeasurements();
   cout <<"DEBUG: BA left "<<vOutliers.size() << " outliers !"<<endl;
+  
   for(unsigned int pairIndex = 0; pairIndex < vOutliers.size(); pairIndex++) {
     
       // get the mappoint of the outlier entry from 2-way lookup list
@@ -1371,6 +1420,7 @@ void MapMaker::BundleAdjust(set<KeyFrame::Ptr> sAdjustSet, set<KeyFrame::Ptr> sF
       KeyFrame::Ptr pKF = mBundleID_View[vOutliers[pairIndex].second];
       // now simply get the mesurement indexes by the MP inside the KF
       KFMeasurement &m = pKF->mMeasurements[pMP];
+      
       // Is the original source kf considered an outlier? That's bad.
       if(pMP->pMMData->GoodMeasCount() <= 2 || m.Source == KFMeasurement::SRC_ROOT)  pMP->bBad = true;
       else {
@@ -1379,13 +1429,13 @@ void MapMaker::BundleAdjust(set<KeyFrame::Ptr> sAdjustSet, set<KeyFrame::Ptr> sF
 	  if(m.Source == KFMeasurement::SRC_TRACKER || m.Source == KFMeasurement::SRC_EPIPOLAR)
 	    mvFailureQueue.push_back( pair<KeyFrame::Ptr, MapPoint::Ptr>(pKF, pMP) );
 	  else
-	    pMP->pMMData->sNeverRetryKFs.insert(pKF); // this is probably unnecessary now...
+	    pMP->pMMData->sNeverRetryKFs.insert(pKF); 
 	  
 	  pKF->mMeasurements.erase(pMP);
 	  pMP->pMMData->sMeasurementKFs.erase(pKF);
 	}
     }
-
+    
   
 }
 
@@ -1396,6 +1446,7 @@ void MapMaker::BundleAdjust(set<KeyFrame::Ptr> sAdjustSet, set<KeyFrame::Ptr> sF
 // TrackerData.h.
 bool MapMaker::ReFind_Common(KeyFrame::Ptr pKF, MapPoint::Ptr pMP)
 {
+  //cout <<"DEBUG: ******************** Refinding common ..."<<endl;
   // abort if either a measurement is already in the map, or we've
   // decided that this point-kf combo is beyond redemption
   if(pMP->pMMData->sMeasurementKFs.count(pKF) || pMP->pMMData->sNeverRetryKFs.count(pKF) )
@@ -1435,6 +1486,8 @@ bool MapMaker::ReFind_Common(KeyFrame::Ptr pKF, MapPoint::Ptr pMP)
       return false;
   }
   
+  //cout <<"DEBUG: ****************************** About to use the patch finder! "<<endl;
+  
   // All being well, we reached this point where we have a valid image projection of the mappoint on the KF
   cv::Matx<float, 2, 2> m2CamDerivs = mCamera.GetProjectionDerivs();
   // The following does two things:
@@ -1450,6 +1503,8 @@ bool MapMaker::ReFind_Common(KeyFrame::Ptr pKF, MapPoint::Ptr pMP)
   }
   // Now find this putative patch in the target KF
   bool bFound = Finder.FindPatchCoarse(v2Image, pKF, 4);  // Very tight search radius!
+  
+  
   
   // Again, if not found, dont ever try this KF on the current point
   if(!bFound) {
@@ -1547,14 +1602,23 @@ void MapMaker::ReFindNewlyMade()
 void MapMaker::ReFindFromFailureQueue()
 {
   if(mvFailureQueue.size() == 0) return;
-  
+  cout<<"DEBUG: *************************************** Failure Queue Size : "<<mvFailureQueue.size()<<endl;
   sort(mvFailureQueue.begin(), mvFailureQueue.end());
-  vector<pair<KeyFrame::Ptr, MapPoint::Ptr> >::iterator iKF_MP;
+  //vector<pair<KeyFrame::Ptr, MapPoint::Ptr> >::iterator iKF_MP;
   int nFound=0;
-  for(iKF_MP = mvFailureQueue.begin(); iKF_MP != mvFailureQueue.end(); iKF_MP++)
-    if( ReFind_Common( iKF_MP->first, iKF_MP->second ) ) nFound++;
   
-  mvFailureQueue.erase(mvFailureQueue.begin(), iKF_MP);
+  for (unsigned int i = 0; i < mvFailureQueue.size(); i++) {
+  //for(iKF_MP = mvFailureQueue.begin(); iKF_MP != mvFailureQueue.end(); iKF_MP++)
+    pair<KeyFrame::Ptr, MapPoint::Ptr> KF_MP = mvFailureQueue[i];
+    if (KF_MP.first.use_count()>0)
+      if (KF_MP.second.use_count()>0)
+	if( ReFind_Common( KF_MP.first, KF_MP.second ) ) nFound++;
+  }
+
+  cout <<"DEBUG: **************************** Erasing failure to the end! "<<endl;
+  //mvFailureQueue.erase(mvFailureQueue.begin(), iKF_MP);
+  mvFailureQueue.clear();
+  
 }
 
 // Is the tracker's camera pose in cloud-cuckoo land?
@@ -1765,7 +1829,7 @@ void MapMaker::GUICommandHandler(string sCommand, string sParams)  // Called by 
   
   cout << "! MapMaker::GUICommandHandler: unhandled command "<< sCommand << endl;
   exit(1);
-}; 
+} 
 
 
 

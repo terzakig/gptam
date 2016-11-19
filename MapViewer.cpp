@@ -27,6 +27,8 @@ void MapViewer::DrawMapDots()
   glBegin(GL_POINTS);
   mv3BaryCenter = cv::Vec3f(0, 0, 0);
   for(size_t i=0; i<mMap.vpPoints.size(); i++)
+    if (mMap.vpPoints[i].use_count() > 0)
+    if (!mMap.vpPoints[i]->bBad)
     {
       cv::Vec3f v3Pos = mMap.vpPoints[i]->v3WorldPos;
       glColor(gavLevelColors[mMap.vpPoints[i]->nSourceLevel]);

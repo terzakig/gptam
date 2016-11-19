@@ -24,19 +24,20 @@ struct Map
   inline bool IsGood() {return bGood;}
   void Reset();
   
-  void MoveBadPointsToTrash();
-  //void EmptyTrash();
-  
+  void deleteBadPoints();
+  void EmptyTrash();
   
   /// List of so-far good mappoints
   std::vector<std::shared_ptr<MapPoint> > vpPoints;
+  
   // This is a list of points that were excluded from the map
-  // This probably is now USELESS!!!
-  // TO BE RMEOVED! TO BE REMOVED!!
-  //std::vector<std::shared_ptr<MapPoint> > vpPointsTrash;
+  std::vector<std::shared_ptr<MapPoint> > vpPointsTrash;
+  
   // list of keyframes
   std::vector<std::shared_ptr<KeyFrame> > vpKeyFrames;
 
+  
+  
   bool bGood;
 };
 
