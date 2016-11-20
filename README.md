@@ -1,5 +1,5 @@
 # gptam
-George's PTAM with OpenCV 
+PTAM with OpenCV 
 
 This real-time Visual SLAM application is a deep code modification of the brilliant work by Klein and Murray , "Parallel Tracking and Mapping" (PTAM).
 
