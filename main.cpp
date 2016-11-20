@@ -17,7 +17,7 @@ using namespace Persistence;
 int main(int argc, char** argv)
 {
   
-  cout << "  George's Visual Tracking and Mapping with OpenCV" << endl;
+  cout << "  Visual Tracking and Mapping with OpenCV" << endl;
   cout << "  --------------- " << endl;
   cout <<endl<<endl<<" University of Portsmouth 2016";
   cout << "  Based on PTAM by Klein and Murray (Isis Innovation Limited 2008)" << endl;

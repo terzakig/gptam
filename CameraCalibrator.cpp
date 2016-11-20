@@ -25,11 +25,11 @@ using namespace Persistence;
 
 int main()
 {
-  cout << "  Welcome to the George's CameraCalibrator for Tracking and Mapping" << endl;
+  cout << "  Welcome to CameraCalibrator for Visual Tracking and Mapping" << endl;
   cout << "  ----------------------------------------------------------------- " << endl;
 
   cout << "  A deep code adaptation of the original 'Parallel tracking and Mapping' by Klein and Murray" << endl;
-  cout << "  This code is purely OpenCV based and DOES NOT REQUIRE libCVD, TooN and GVars (although you will need openGL)" << endl;
+  cout << "  This code is purely OpenCV based and does not require libCVD, TooN and GVars (although you will need openGL)" << endl;
   cout << " *"<<endl;
   cout << " For interoperability with OpenCV methods and structures,"<<endl;
   cout << " Partial functionality of TooN, libCVD and GVars was retained based "<<endl
