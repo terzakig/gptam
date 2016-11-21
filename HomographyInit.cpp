@@ -12,11 +12,11 @@
 #include "GCVD/Addedutils.h"
 #include "GCVD/SE3.h"
 
-#include "GCVD/GraphSLAM.h"
+//#include "GCVD/GraphSLAM.h"
 #include "MEstimator.h"
 
 using namespace std;
-using namespace Optimization;
+//using namespace Optimization;
 
 
 // This function marks a homography match as inliner by simply checking if 
@@ -171,10 +171,7 @@ cv::Matx<float, 3, 3> HomographyInit::HomographyFromMatches(vector<HomographyMat
 //						Compute Tukey (or any other robust) weights
 //					     b) Do the G-N thing... 
 // 
-// The whole thing should take a long friggin' time if you ask me... 
-// The trouble with this approach is that you don't have a big data matrix anymore, 
-// but a lot of small separate data matrices per data term, which slows everything down to a cold freeze...
-// And, theoretically speaking, you are not guranteed to get to the global minimum!
+
 
 // NOTE: The following function uses the actual pixel reprojection error in the second image as opposed
 // 	 to the approximation employed originally by PTAM. Thus, now HomographyInit requires a reference to the 
@@ -965,7 +962,6 @@ void HomographyInit::ChooseBestDecomposition()
 	  cv::Matx<float, 3, 3> m3R =  mvDecompositions[i].se3SecondFromFirst.get_rotation().get_matrix();
 	  // E = [t]x * R
 	  for(int j=0; j<3; j++) {
-	    //m3Essential.T()[j] = se3.get_translation() ^ se3.get_rotation().get_matrix().T()[j];
 	    
 	    m3Essential(0, j) = -v3t[2] * m3R(1, j) + v3t[1] * m3R(2, j);
 	    m3Essential(1, j) =  v3t[2] * m3R(0, j) - v3t[0] * m3R(2, j);
