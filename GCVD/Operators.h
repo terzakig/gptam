@@ -1,3 +1,8 @@
+// George Terzakis 2016
+//
+// University of Portsmouth
+
+
 #ifndef OPERATORS_H
 #define OPERATORS_H
 
@@ -14,9 +19,7 @@ using namespace cv;
 namespace MyOperatorOverloads {
 
   
-//Automatic type deduction of return types
-///This function offers to return a value of type C. This function
-///is not implemented anywhere, the result is used for type deduction.
+// Rosten's clever way of deducting the type of a class
 template<class C> C gettype();
 	
 
@@ -639,7 +642,8 @@ struct Operator<MatrixVectorMultiply<PM, PV, Sz> > {
 	}
 };
 
-// Standard multiplication cv::Matx * cv::Vec of DIFFERENT-TYPES 
+/// Standard multiplication cv::Matx * cv::Vec of DIFFERENT-TYPES 
+/// Yields cv::Vec
 template<typename PM, int R, int C, typename PV, int Sz> 
 struct Operator<MatxVectorMultiply<PM, R, C, PV, Sz> > {
 	const cv::Matx<PM, R, C> &M;
@@ -652,14 +656,14 @@ struct Operator<MatxVectorMultiply<PM, R, C, PV, Sz> > {
 
 	typedef typename MultiplyType<PM, PV>::type P0;
 	
-	cv::Matx<P0, R, 1> compute() const {
+	cv::Vec<P0, R> compute() const {
 	  
-	  cv::Matx<P0, R, 1> res; 
+	  cv::Vec<P0, R> res; 
 	
 	  for(int r=0; r < M.rows; ++r) {
 	    res[r] = 0;
 	    for (int c = 0; c < v.rows; c++) 
-		res(r, 0) += Multiply::template op<P0, PM, PV>(M(r, c) , v[c]); 
+		res[r] += Multiply::template op<P0, PM, PV>(M(r, c) , v[c]); 
 	  }
 	  
 	  return res;
@@ -676,7 +680,7 @@ struct Operator<MatxVectorMultiply<P, R, C, P, Sz> > {
 	Operator(const cv::Matx<P, R, C> &M_in, const cv::Vec<P, Sz> &v_in) : M(M_in), v(v_in) {}
 
 	
-	cv::Matx<P, R, 1> compute() const {
+	cv::Vec<P, R> compute() const {
 	  
 	  return cv::operator*(M, v); // size mismatches should be taken care of by OpenCV
 	}
@@ -696,7 +700,7 @@ cv::Mat_<typename MyOperatorOverloads::MultiplyType<PM, PV>::type> operator *(co
 																	
 // cv::Matx * cv::Vec multiplication operator actual overload.
 template<typename PM, int R, int C, typename PV, int Sz>
-cv::Matx<typename MyOperatorOverloads::MultiplyType<PM, PV>::type, R, 1> operator *(const cv::Matx<PM, R, C> &m, const cv::Vec<PV, Sz> &v)
+cv::Vec<typename MyOperatorOverloads::MultiplyType<PM, PV>::type, R> operator *(const cv::Matx<PM, R, C> &m, const cv::Vec<PV, Sz> &v)
 {
 	return MyOperatorOverloads::Operator<MyOperatorOverloads::MatxVectorMultiply<PM, R, C, PV, Sz> >(m,v).compute();
 }
