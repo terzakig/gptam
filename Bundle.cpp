@@ -309,7 +309,7 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
       // ********************************** Calculate B: The projection derivs WRT the point *****************************************
       for(int m = 0; m < 3; m++) {
 	  
-	 const cv::Matx<float, 3, 1> v3Motion = cam.se3CfW.get_rotation().get_matrix().col(m);
+	 cv::Matx<float, 3, 1> v3Motion = cam.se3CfW.get_rotation().get_matrix().col(m);
 	
 	 cv::Vec<float, 2> v2CamFrameMotion( (v3Motion(0, 0) - v4Cam[0] * v3Motion(2, 0) * invDepth) * invDepth,
 				             (v3Motion(1, 0) - v4Cam[1] * v3Motion(2, 0) * invDepth) * invDepth
@@ -347,47 +347,49 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
   // The next bits depend on mdLambda! So loop this next bit until error goes down.
   double dNewError = dCurrentError + 9999;
   while(dNewError > dCurrentError && !mbConverged && !mbHitMaxIterations && !*pbAbortSignal) {
+    
     // Rest of part (ii) : find V*i inverse
     vector<BAPoint>::iterator iBAPoint;
     for( iBAPoint = mvPoints.begin(); iBAPoint != mvPoints.end(); iBAPoint++) {
-	  cv::Matx<float, 3, 3> m3VStar = iBAPoint->m3V; 
-	  if(m3VStar(0, 0) * m3VStar(1, 1) * m3VStar(2, 2) == 0 )
-	    iBAPoint->m3VStarInv = cv::Matx<float, 3, 3>::zeros();
-	  else {
-	      // Now, we need to invert the Augmented p.m3V (i.e., m3Vstar)
+	  
+      cv::Matx<float, 3, 3> m3VStar = iBAPoint->m3V; 
+      if(m3VStar(0, 0) * m3VStar(1, 1) * m3VStar(2, 2) == 0 )
+	  iBAPoint->m3VStarInv = cv::Matx<float, 3, 3>::zeros();
+      else {
+	// Now, we need to invert the Augmented p.m3V (i.e., m3Vstar)
 	       
-	      // augmenting the diagonal
-	      m3VStar(0, 0) *= (1.0 + mdLambda); m3VStar(1, 1) *= (1.0 + mdLambda); m3VStar(2, 2) *= (1.0 + mdLambda);
+	// augmenting the diagonal
+	m3VStar(0, 0) *= (1.0 + mdLambda); m3VStar(1, 1) *= (1.0 + mdLambda); m3VStar(2, 2) *= (1.0 + mdLambda);
 	      
-	      // At this point its easier to invoke standard 3x3 symmetric matrix inversion 
-	      // based on the lower triangle...
-	      // Check again if non-invertible! I have seen it happen!
-	      if ( fabs(CvUtils::M3Symm_LT_Det( m3VStar ) ) < 10e-6) {
+	// At this point its easier to invoke standard 3x3 symmetric matrix inversion 
+	// based on the lower triangle...
+	// Check again if non-invertible! I have seen it happen!
+	if ( fabs(CvUtils::M3Symm_LT_Det( m3VStar ) ) < 10e-6) {
 		
-		// We now HAVE to fill-in the Upper triangle in order to do the SVD...
-		m3VStar(0, 1) = m3VStar(1, 0);
-		m3VStar(0, 2) = m3VStar(2, 0);
-		m3VStar(1, 2) = m3VStar(2, 1);
+	  // We now HAVE to fill-in the Upper triangle in order to do the SVD...
+	  m3VStar(0, 1) = m3VStar(1, 0);
+	  m3VStar(0, 2) = m3VStar(2, 0);
+	  m3VStar(1, 2) = m3VStar(2, 1);
 	      
-		// using the pseudo inverse (this very rarely happens, but it CAN happen)
-		cv::Matx<float, 3, 3> U_, Vt_;
-		cv::Matx<float, 3, 1> w_;
-		cv::SVD::compute(m3VStar, w_, U_, Vt_);
-		cv::Matx<float, 3, 3> S_;
-		for (int d_ = 0; d_<3; d_++) {
-		  S_(d_, 0) = S_(d_, 1) = S_(d_, 2);
-		  if (w_(d_, 0) != 0) S_(d_,d_) = 1.0 / w_(d_, 0);
+	  // using the pseudo inverse (this very rarely happens, but it CAN happen)
+	  cv::Matx<float, 3, 3> U_, Vt_;
+	  cv::Matx<float, 3, 1> w_;
+	  cv::SVD::compute(m3VStar, w_, U_, Vt_);
+	  cv::Matx<float, 3, 3> S_;
+	  for (int d_ = 0; d_<3; d_++) {
+	    S_(d_, 0) = S_(d_, 1) = S_(d_, 2);
+	    if (w_(d_, 0) != 0) S_(d_,d_) = 1.0 / w_(d_, 0);
 		  
-		}
-		iBAPoint->m3VStarInv = Vt_.t()*S_*U_.t(); 
-		cout <<"Ooops! Close to a NAN state of mind!"<<endl;
-	      }
-	      else 
-		iBAPoint->m3VStarInv = CvUtils::M3Symm_LT_Inverse(m3VStar); // standard invertion using LT only
+	  }
+	  iBAPoint->m3VStarInv = Vt_.t()*S_*U_.t(); 
+	  cout <<"Ooops! Close to a NAN state of mind!"<<endl;
+	}
+	else 
+	    iBAPoint->m3VStarInv = CvUtils::M3Symm_LT_Inverse(m3VStar); // standard invertion using LT only
 	      
 	      
-	    }
       }
+    }
 
       // Done part (ii), except calculating Yij;
       // But we can do this inline when we calculate S in part (iii).
@@ -508,8 +510,8 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
       // (This is actually unneccessary since the lapack cholesky solver
       // uses only one triangle, but I'm leaving it in here anyway.)
       //
-      // TODO: Verify that OpenCV Cholesky inversion does same 
-      //        (possibly, since it uses the Lapack solver)
+      // NOTE: OpenCV DOES NOT use only a triangle in cv::solve(), 
+      //        even when Cholesky is specified. Thus, we need the entire matrix!
       for(int i=0; i<mS.rows; i++)
 	for(int j=0; j<i; j++) 
 	  mS(j, i) = mS(i, j);
@@ -538,12 +540,12 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
 	      //v3Sum+=pMeas->m63W.t() * mvCamerasUpdate.slice(cam.nStartRow,6);
 	      int _c;
 	      for (_c = 0; _c < 3; _c++) 
-		v3Sum[_c] += pMeasurement->m63W(0, _c) * mvCamerasUpdate(cam.nStartRow + 0, _c) +
-			     pMeasurement->m63W(1, _c) * mvCamerasUpdate(cam.nStartRow + 1, _c) +
-			     pMeasurement->m63W(2, _c) * mvCamerasUpdate(cam.nStartRow + 2, _c) + 
-			     pMeasurement->m63W(3, _c) * mvCamerasUpdate(cam.nStartRow + 3, _c) + 
-			     pMeasurement->m63W(4, _c) * mvCamerasUpdate(cam.nStartRow + 4, _c) + 
-			     pMeasurement->m63W(5, _c) * mvCamerasUpdate(cam.nStartRow + 5, _c);
+		v3Sum[_c] += pMeasurement->m63W(0, _c) * mvCamerasUpdate(cam.nStartRow + 0, 0) +
+			     pMeasurement->m63W(1, _c) * mvCamerasUpdate(cam.nStartRow + 1, 0) +
+			     pMeasurement->m63W(2, _c) * mvCamerasUpdate(cam.nStartRow + 2, 0) + 
+			     pMeasurement->m63W(3, _c) * mvCamerasUpdate(cam.nStartRow + 3, 0) + 
+			     pMeasurement->m63W(4, _c) * mvCamerasUpdate(cam.nStartRow + 4, 0) + 
+			     pMeasurement->m63W(5, _c) * mvCamerasUpdate(cam.nStartRow + 5, 0);
 			   
 	      
 	  }
