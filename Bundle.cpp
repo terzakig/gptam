@@ -547,7 +547,6 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
 			     pMeasurement->m63W(4, _c) * mvCamerasUpdate(cam.nStartRow + 4, 0) + 
 			     pMeasurement->m63W(5, _c) * mvCamerasUpdate(cam.nStartRow + 5, 0);
 			   
-	      
 	  }
 	  cv::Vec<float, 3> v3 = mvPoints[pointIndex].v3EpsilonB - v3Sum;
 	  
@@ -583,12 +582,12 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
 	if(mvCameras[camIndex].bFixed) mvCameras[camIndex].se3CfWNew = mvCameras[camIndex].se3CfW;
 	  else
 	    //mvCameras[j].se3CfWNew = SE3<>::exp(vCamerasUpdate.slice(mvCameras[j].nStartRow, 6)) * mvCameras[j].se3CfW;
-	  mvCameras[camIndex].se3CfWNew = SE3<>::exp(cv::Vec<float, 6>( mvCamerasUpdate(mvCameras[camIndex].nStartRow + 0), 
-									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 1),
-									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 2),
-									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 3),
-									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 4),
-									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 5) ) 
+	  mvCameras[camIndex].se3CfWNew = SE3<>::exp(cv::Vec<float, 6>( mvCamerasUpdate(mvCameras[camIndex].nStartRow + 0, 0), 
+									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 1, 0),
+									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 2, 0),
+									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 3, 0),
+									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 4, 0),
+									mvCamerasUpdate(mvCameras[camIndex].nStartRow + 5, 0) ) 
 								       ) * mvCameras[camIndex].se3CfW;
       }
       
@@ -620,8 +619,10 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
       cout << " WINNER            ------------ " << endl;
       // Woo! got somewhere. Update lambda and make changes permanent.
       ModifyLambda_GoodStep();
-      for(unsigned int camIndex = 0; camIndex < mvCameras.size(); camIndex++) mvCameras[camIndex].se3CfW = mvCameras[camIndex].se3CfWNew;
-      for(unsigned int pointIndex = 0; pointIndex < mvPoints.size(); pointIndex++) mvPoints[pointIndex].v3Pos = mvPoints[pointIndex].v3PosNew; 
+      for(unsigned int camIndex = 0; camIndex < mvCameras.size(); camIndex++) 
+	mvCameras[camIndex].se3CfW = mvCameras[camIndex].se3CfWNew;
+      for(unsigned int pointIndex = 0; pointIndex < mvPoints.size(); pointIndex++) 
+	mvPoints[pointIndex].v3Pos = mvPoints[pointIndex].v3PosNew; 
       mnAccepted++;
   }
   
@@ -661,9 +662,15 @@ double Bundle::FindNewError()
 	  cout << ".";
 	  continue;
       }
-      cv::Vec<float, 2> v2ImPlane = CvUtils::pproject(v3Cam);
-      cv::Vec<float, 2> v2Image   = mCamera.Project(v2ImPlane);
-      cv::Vec<float, 2> v2Error =   ilMeas->dSqrtInvNoise * (ilMeas->v2Found - v2Image);
+      cv::Vec<float, 2> v2EucPlane = CvUtils::pproject(v3Cam);
+      cv::Vec<float, 2> v2Image   = mCamera.Project(v2EucPlane);
+      // NOTE: In PTAMM, for some reason, the normalized Euclidean projection of v3Cam is compared 
+      //       to the vFound entry of the BAMeasurement structure. This cannot be valid, 
+      //       because the map maker passes "vRootPos" of the KFMeasurement to the bundle adjuster;
+      //       and we know for fact thay the tracker is assigning the "v2Found" member of trackerdata
+      //       to vRootPos, which is an image position! Thus, the error below is correct, although the PTAMM comparison
+      //       it does not produce horrible results and therefore may went unnoticed...
+      cv::Vec<float, 2> v2Error =   ilMeas->dSqrtInvNoise * (ilMeas->v2Found - v2Image); 
       double dErrorSquared = v2Error[0] * v2Error[0] + v2Error[1] * v2Error[1];
       dNewError += MEstimator::ObjectiveScore(dErrorSquared, mdSigmaSquared);
   }
