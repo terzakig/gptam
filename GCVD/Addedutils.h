@@ -18,7 +18,7 @@ namespace CvUtils {
   
 /// Decimate grayscale image a la Rosten...
 template <typename T>
-void halfSample(const cv::Mat_<T> &src, cv::Mat_<T> &dest) {
+inline void halfSample(const cv::Mat_<T> &src, cv::Mat_<T> &dest) {
 
   int rows = src.rows / 2;
   int cols = src.cols / 2;
@@ -43,7 +43,7 @@ void halfSample(const cv::Mat_<T> &src, cv::Mat_<T> &dest) {
 // get the mean of an image/matrix
 // T better NOT be uchar 9see below for this case)
 template <typename T>
-double mavg(const cv::Mat_<T> &m) {
+inline double mavg(const cv::Mat_<T> &m) {
 
   		 
   int r, c;
@@ -65,7 +65,7 @@ double mavg(const cv::Mat_<T> &m) {
 
 
 
-static void pause(cv::Mat img)
+inline void pause(cv::Mat img)
 {
   cv::namedWindow("pause");
   cv::imshow("pause", img);
@@ -591,7 +591,7 @@ inline cv::Mat_<P> normalize(const cv::Mat_<P> &m) {
 
 // wouldn't use this unless I really needed it...
 template <typename P, int Sz1, int Sz2>
-const cv::Vec<P, Sz2>& slice(const cv::Vec<P,Sz1> &v, int offset) {
+inline const cv::Vec<P, Sz2>& slice(const cv::Vec<P,Sz1> &v, int offset) {
   cv::Vec<P, Sz2> ret;
   for (int i = 0; i < ret.rows; i++)
     ret[i] = v[i+offset];
@@ -616,7 +616,7 @@ inline cv::Vec<P, Sz>  mat2Vec(const cv::Mat_<P> &m) {
 
 // conversion from cv::Vec to cv::Mat
 template<typename P, int Sz> 
-const cv::Mat_<P> mat2Vec(const cv::Vec<P, Sz> &v) {
+inline const cv::Mat_<P> mat2Vec(const cv::Vec<P, Sz> &v) {
   cv::Mat_<P> ret(v.rows, 1);
   
   for (int i = 0; i<v.rows; i++)
