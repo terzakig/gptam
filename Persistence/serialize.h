@@ -240,19 +240,29 @@ namespace Persistence
 		      return DefaultValue<CvMatrixWrapper<P, -1, 0> >::val(); // need a 1D default matrix ...
 		    }
 
+		    // taking care of the case in which a row is inconsistent with the others, or it has zero-size. 
+		    bool badMatrix = false;
 		    for(unsigned int r=1; r < v.size(); r++)
-			if ( (v[r].size() != v[0].size() ) || (v[0].size() == 0) )  goto fail;
-		    
+			if ( (v[r].size() != v[0].size() ) || (v[0].size() == 0) )  {
+			  badMatrix = true;
+			  break;
+			}
+		    if (badMatrix) {
+			i.setstate(std::ios::failbit);
+			i.setstate(std::ios::badbit);
+			return DefaultValue<CvMatrixWrapper<P, -1, 0> >::val();
+		    }
 			
-			cv::Mat_<P> retval(v.size(), v[0].size());
+		    cv::Mat_<P> retval(v.size(), v[0].size());
 
-			for(int r=0; r < retval.rows; r++)
-			  for(int c=0; c < retval.cols; c++)
+		    for(int r=0; r < retval.rows; r++)
+			for(int c=0; c < retval.cols; c++)
 			    retval(r, c) = v[r][c];
 
-			return retval;
+		    return retval;
 					
-
+			
+				
 			      
 		  }
 		};
