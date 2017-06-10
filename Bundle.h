@@ -105,7 +105,7 @@ struct BAMeasurement
   cv::Matx<float, 2, 6> m26A; // 2x6
   cv::Matx<float, 2, 3> m23B; // 2x3
   cv::Matx<float, 6, 3> m63W; // 6x3
-  cv::Matx<float, 6, 3> m63Y; // 6x3
+  //cv::Matx<float, 6, 3> m63Y; // 6x3 // NOT IN USE. And is not really necessary (although it is defined in A6.4)
   
   double dSqrtInvNoise;
   
