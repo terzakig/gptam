@@ -381,7 +381,7 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
 	  cv::Matx<float, 3, 3> S_;
 	  for (int d_ = 0; d_<3; d_++) {
 	    S_(d_, 0) = S_(d_, 1) = S_(d_, 2) = 0;
-	    if (w_(d_, d_) != 0) S_(d_,d_) = 1.0 / w_(d_, d_);
+	    if (w_(d_, 0) != 0) S_(d_,d_) = 1.0 / w_(d_, 0);
 		  
 	  }
 	  iBAPoint->m3VStarInv = Vt_.t()*S_*U_.t(); 
