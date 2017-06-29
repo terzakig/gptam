@@ -16,9 +16,57 @@
 namespace CvUtils {
   
   
+  
+// Euler angles for R = Rz*Ry*Rx
+// Based on a (most probably correct) report by G. Slabaugh
+template<typename P>
+  inline bool EulerAnglesZYX(const cv::Matx<P, 3, 3> &R, 
+				    P &thetax,
+				    P &thetay,
+				    P &thetaz) 
+  {
+    if ( fabs(cv::determinant(R) - 1) < 0.00001 ) return false;
+	
+    P R11 = R(0, 0), R12 = R(0, 1), R13 = R(0, 2),
+      R21 = R(1, 0), R22 = R(1, 1), R23 = R(1, 2),
+      R31 = R(2, 0), R32 = R(2, 1), R33 = R(2, 2);
+    
+      // 1. Obtaining the angle about y
+      if ( fabs( fabs(R31) - 1 ) > 0.0000001) { // angles near +- π / 2
+      
+	// now solve
+	thetay = -asin(R31);
+	
+	// 2. Solving for thetax. Since we rejected the case where 
+	P cos_thetay = cos(thetay);
+	thetax = atan2( R32 / cos_thetay , R33 / cos_thetay  );
+	
+	// 3. Solving for thetaz
+	thetaz = atan2( R21 / cos_thetay  , R11 / cos_thetay  );
+	
+	return true; // all well...
+      }
+      else {
+	// thetaz is ambiguous (gimball lock!), set to zero
+	thetaz = 0;
+	if (R31 < 0) { // R31 == -1
+	  
+	  thetay = M_PI / 2;
+	  thetax = thetaz + atan2(R12, R13);
+	}
+	 else {
+	 
+	   thetay = - M_PI / 2;
+	   thetax = -thetaz + atan2(-R12 , -R13);
+	}
+	return false; // indicate gimball lock
+      }
+  }
+
+  
 /// Decimate grayscale image a la Rosten...
 template <typename T>
-inline void halfSample(const cv::Mat_<T> &src, cv::Mat_<T> &dest) {
+void halfSample(const cv::Mat_<T> &src, cv::Mat_<T> &dest) {
 
   int rows = src.rows / 2;
   int cols = src.cols / 2;
@@ -92,14 +140,22 @@ inline cv::Vec<P, 4> backproject(const cv::Vec<P, 3> &v) {
 template<typename P>
 inline cv::Vec<P, 2> pproject(const cv::Vec<P, 3> &v) {
   
-  return cv::Vec<P, 2>(v[0] / v[2], v[1] / v[2]);
+  if (v[2] == 0) return cv::Vec<P, 2>(v[0], v[1]);
+  
+  P invDepth = 1.0 / v[2];
+  
+  return cv::Vec<P, 2>(v[0] * invDepth, v[1] * invDepth);
 }
 
 /// perspective projection of the lamest form.... (NOTE: NO division by zero povisions are made...)
 template<typename P>
 inline cv::Vec<P, 3> pproject(const cv::Vec<P, 4> &v) {
+ 
+   if (v[3] == 0) return cv::Vec<P, 3>(v[0], v[1], v[2] );
   
-  return cv::Vec<P, 3>(v[0] / v[3], v[1] / v[3], v[2] / v[3]);
+   P invDepth = 1.0 / v[3];
+ 
+  return cv::Vec<P, 3>(v[0] * invDepth, v[1] * invDepth, v[2] * invDepth);
 }
 
 
@@ -230,62 +286,51 @@ inline cv::Matx<T, 3, 3> M3Inverse(const cv::Matx<T, 3, 3> &m)
 }
 
 
-
-/// 3x3 inverse for Symmetric Matx objects using the Upper Triangle !!!!!
+/// 3x3 inverse for Symmetric Matx using the Upper Triangle !!!!!
+/// NOTE: The inverse is filled completely
 template<typename T>
-inline cv::Matx<T, 3, 3> M3Symm_UT_Inverse(const cv::Matx<T, 3, 3> &m)
+inline void M3Symm_UT_Inverse(const T (&V)[9], T (&Vinv)[9])
 {
-  cv::Matx<T, 3, 3> m3Res;
-  T det = m(0, 0) * ( m(1, 1) * m(2, 2)  - m(1, 2) * m(1, 2) ) - 
-	  m(0, 1) * ( m(0, 1) * m(2, 2)  - m(1, 2) * m(0, 2) ) + 
-	  m(0, 2) * ( m(0, 1) * m(1, 2)  - m(1, 1) * m(0, 2) );
-  assert(det!=0.0);
-  T invDet = 1.0 / det;
-  m3Res(0, 0) =  ( m(1, 1) * m(2, 2) - m(1, 2) * m(1, 2) ) * invDet;
-  m3Res(1, 0) = -( m(0, 1) * m(2, 2) - m(0, 2) * m(1, 2) ) * invDet;
-  m3Res(2, 0) =  ( m(0, 1) * m(1, 2) - m(0, 2) * m(1, 1) ) * invDet;
+ // 1. Get the elements of the matrix
+  T a = V[0], b = V[1], c = V[2],
+    d = V[1], e = V[4], f = V[5],
+    g = V[2], h = V[5], i = V[8];
  
-  m3Res(0, 1) = -( m(0, 1) * m(2, 2) - m(1, 2) * m(0, 2) ) * invDet;
-  m3Res(1, 1) =  ( m(0, 0) * m(2, 2) - m(0, 2) * m(0, 2) ) * invDet;
-  m3Res(2, 1) = -( m(0, 0) * m(1, 2) - m(0, 2) * m(0, 1) ) * invDet;
-  
-  m3Res(0, 2) =  ( m(0, 1) * m(1, 2) - m(1, 1) * m(0, 2) ) * invDet;
-  m3Res(1, 2) = -( m(0, 0) * m(1, 2) - m(0, 1) * m(0, 2) ) * invDet;
-  m3Res(2, 2) =  ( m(0, 0) * m(1, 1) - m(0, 1) * m(0, 1) ) * invDet;
-  
+ // 2. Determinant
+ T det = a*e*i + b*f*g + c*d*h - g*e*c - h*f*a - i*d*b;
+ assert(det != 0 && "Zero determinant!");
+ T invDet = 1.0 / det;
  
-  
-  return m3Res;
+ // 3. Adjoint and inverse
+ Vinv[0] = ( e*i - f*h ) * invDet; Vinv[1] = ( h*c - i*b ) * invDet;   Vinv[2] = ( b*f - c*e ) * invDet;
+ Vinv[3] =  Vinv[1];               Vinv[4] = ( a*i - g*c ) * invDet;   Vinv[5] = ( d*c - a*f ) * invDet;
+ Vinv[6] =  Vinv[2];               Vinv[7] =   Vinv[5];                Vinv[8] = ( a*e - d*b ) * invDet;
+ 
 }
+
 
 
 /// 3x3 inverse for Symmetric Matx using the Lower Triangle !!!!!
+/// NOTE: The inverse is filled completely
 template<typename T>
-inline cv::Matx<T, 3, 3> M3Symm_LT_Inverse(const cv::Matx<T, 3, 3> &m)
+inline void M3Symm_LT_Inverse(const T (&V)[9], T (&Vinv)[9])
 {
-  cv::Matx<T, 3, 3> m3Res;
-  T det = m(0, 0) * ( m(1, 1) * m(2, 2)  - m(2, 1) * m(2, 1) ) - 
-	  m(1, 0) * ( m(1, 0) * m(2, 2)  - m(2, 1) * m(2, 0) ) + 
-	  m(2, 0) * ( m(1, 0) * m(2, 1)  - m(1, 1) * m(2, 0) );
-  assert(det!=0.0);
-  T invDet = 1.0 / det;
-  m3Res(0, 0) =  ( m(1, 1) * m(2, 2) - m(2, 1) * m(2, 1) ) * invDet;
-  m3Res(1, 0) = -( m(1, 0) * m(2, 2) - m(2, 0) * m(2, 1) ) * invDet;
-  m3Res(2, 0) =  ( m(1, 0) * m(2, 1) - m(2, 0) * m(1, 1) ) * invDet;
+ // 1. Get the elements of the matrix
+  T a = V[0], b = V[3], c = V[6],
+    d = V[3], e = V[4], f = V[7],
+    g = V[6], h = V[7], i = V[8];
  
-  m3Res(0, 1) = -( m(1, 0) * m(2, 2) - m(2, 1) * m(2, 0) ) * invDet;
-  m3Res(1, 1) =  ( m(0, 0) * m(2, 2) - m(2, 0) * m(2, 0) ) * invDet;
-  m3Res(2, 1) = -( m(0, 0) * m(2, 1) - m(2, 0) * m(1, 0) ) * invDet;
-  
-  m3Res(0, 2) =  ( m(1, 0) * m(2, 1) - m(1, 1) * m(2, 0) ) * invDet;
-  m3Res(1, 2) = -( m(0, 0) * m(2, 1) - m(1, 0) * m(2, 0) ) * invDet;
-  m3Res(2, 2) =  ( m(0, 0) * m(1, 1) - m(1, 0) * m(1, 0) ) * invDet;
-  
+ // 2. Determinant
+ T det = a*e*i + b*f*g + c*d*h - g*e*c - h*f*a - i*d*b;
+ assert(det != 0 && "Zero determinant!");
+ T invDet = 1.0 / det;
  
-  
-  return m3Res;
+ // 3. Adjoint and inverse
+ Vinv[0] = ( e*i - f*h ) * invDet; Vinv[1] = ( h*c - i*b ) * invDet;   Vinv[2] = ( b*f - c*e ) * invDet;
+ Vinv[3] =  Vinv[1];               Vinv[4] = ( a*i - g*c ) * invDet;   Vinv[5] = ( d*c - a*f ) * invDet;
+ Vinv[6] =  Vinv[2];               Vinv[7] =   Vinv[5];                Vinv[8] = ( a*e - d*b ) * invDet;
+ 
 }
-
 
 
 
@@ -540,24 +585,30 @@ inline T M3Det(const cv::Matx<T, 3, 3> &m )
 
 // Determinant of 3x3 Symmetric Matx object from Lower triangle
 template<typename T>
-inline T M3Symm_LT_Det(const cv::Matx<T, 3, 3> &m )
+inline T M3Symm_LT_Det(const T (&V)[9] )
 {
-  return  
-    m(0, 0) * ( m(1, 1) * m(2, 2)  - m(2, 1) * m(2, 1) ) - 
-    m(1, 0) * ( m(1, 0) * m(2, 2)  - m(2, 1) * m(2, 0) ) + 
-    m(2, 0) * ( m(1, 0) * m(2, 1)  - m(1, 1) * m(2, 0) );
-   
+  // 1. Get the elements of the matrix
+  T a = V[0], b = V[3], c = V[6],
+    d = V[3], e = V[4], f = V[7],
+    g = V[6], h = V[7], i = V[8];
+ 
+ // 2. Determinant
+ return a*e*i + b*f*g + c*d*h - g*e*c - h*f*a - i*d*b;
+
 }
 
 
 // Determinant of 3x3 Symmetric Matx object from Upper triangle
 template<typename T>
-inline T M3Symm_UT_Det(const cv::Matx<T, 3, 3> &m )
+inline T M3Symm_UT_Det(const T (&V)[9] )
 {
-  return  
-    m(0, 0) * ( m(1, 1) * m(2, 2)  - m(1, 2) * m(1, 2) ) - 
-    m(0, 1) * ( m(0, 1) * m(2, 2)  - m(1, 2) * m(0, 2) ) + 
-    m(0, 2) * ( m(0, 1) * m(1, 2)  - m(1, 1) * m(0, 2) );
+  // 1. Get the elements of the matrix
+  T a = V[0], b = V[1], c = V[2],
+    d = V[1], e = V[4], f = V[5],
+    g = V[2], h = V[5], i = V[8];
+ 
+ // 2. Determinant
+ return a*e*i + b*f*g + c*d*h - g*e*c - h*f*a - i*d*b;
 }
 
 
@@ -591,7 +642,7 @@ inline cv::Mat_<P> normalize(const cv::Mat_<P> &m) {
 
 // wouldn't use this unless I really needed it...
 template <typename P, int Sz1, int Sz2>
-inline const cv::Vec<P, Sz2>& slice(const cv::Vec<P,Sz1> &v, int offset) {
+const cv::Vec<P, Sz2>& slice(const cv::Vec<P,Sz1> &v, int offset) {
   cv::Vec<P, Sz2> ret;
   for (int i = 0; i < ret.rows; i++)
     ret[i] = v[i+offset];
