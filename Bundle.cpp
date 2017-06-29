@@ -353,18 +353,21 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
     for( iBAPoint = mvPoints.begin(); iBAPoint != mvPoints.end(); iBAPoint++) {
 	  
       cv::Matx<float, 3, 3> m3VStar = iBAPoint->m3V; 
+      
+      // CASE #1 : if V* is NOT Positive Semi-Definite, we zero the inverse. 
       if(m3VStar(0, 0) * m3VStar(1, 1) * m3VStar(2, 2) == 0 )
+      {
 	  iBAPoint->m3VStarInv = cv::Matx<float, 3, 3>::zeros();
-      else {
-	// Now, we need to invert the Augmented p.m3V (i.e., m3Vstar)
+      }
+      else 
+      {
 	       
-	// augmenting the diagonal
+	// augmenting the diagonal now (didn't make sense doing so prior to the check for PSD
 	m3VStar(0, 0) *= (1.0 + mdLambda); m3VStar(1, 1) *= (1.0 + mdLambda); m3VStar(2, 2) *= (1.0 + mdLambda);
 	      
-	// At this point its easier to invoke standard 3x3 symmetric matrix inversion 
-	// based on the lower triangle...
-	// Check again if non-invertible! I have seen it happen!
-	if ( fabs(CvUtils::M3Symm_LT_Det( m3VStar ) ) < 10e-6) {
+	// CASE #2: Determinant is very small. Use the Moore-Penrose inverse (SVD based computation)
+	if ( fabs(CvUtils::M3Symm_LT_Det( m3VStar.val ) ) < 10e-5) 
+	{
 		
 	  // We now HAVE to fill-in the Upper triangle in order to do the SVD...
 	  m3VStar(0, 1) = m3VStar(1, 0);
@@ -377,16 +380,17 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
 	  cv::SVD::compute(m3VStar, w_, U_, Vt_);
 	  cv::Matx<float, 3, 3> S_;
 	  for (int d_ = 0; d_<3; d_++) {
-	    S_(d_, 0) = S_(d_, 1) = S_(d_, 2);
-	    if (w_(d_, 0) != 0) S_(d_,d_) = 1.0 / w_(d_, 0);
+	    S_(d_, 0) = S_(d_, 1) = S_(d_, 2) = 0;
+	    if (w_(d_, d_) != 0) S_(d_,d_) = 1.0 / w_(d_, d_);
 		  
 	  }
 	  iBAPoint->m3VStarInv = Vt_.t()*S_*U_.t(); 
-	  cout <<"Ooops! Close to a NAN state of mind!"<<endl;
+	  cout <<"Non-Invertible V*!"<<endl;
 	}
-	else 
-	    iBAPoint->m3VStarInv = CvUtils::M3Symm_LT_Inverse(m3VStar); // standard invertion using LT only
-	      
+	else // CASE #3: Use the standard (adjoint) inversion formula for 3x3 symmetric matrices
+	{
+	    CvUtils::M3Symm_LT_Inverse(m3VStar.val, iBAPoint->m3VStarInv.val); // standard inversion using LT only
+	}    
 	      
       }
     }
