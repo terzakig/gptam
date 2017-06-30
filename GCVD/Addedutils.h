@@ -332,6 +332,41 @@ inline void M3Symm_LT_Inverse(const T (&V)[9], T (&Vinv)[9])
  
 }
 
+// Cholesky decomposition for 3x3 matrices PSD with data stored in the lower triangle
+template<typename T>
+inline bool M3PSD_LT_Cholesky(const T (&M)[9], T (&L)[9])
+{
+  
+   if ( M[0] <= 0) return false;
+   
+   // L11
+   T L11 = L[0] = sqrt(M[0]), L21, L22, L31, L32, L33;
+   
+   
+   // L21
+   T invL11 = 1.0 / L11;
+   
+   L21 = L[3] = invL11 * M[3];
+   
+   // L22
+   if ( M[4] - L21 * L21 <= 0 ) return false;
+   L22 = L[4] = sqrt( M[4] - L21 * L21);
+   
+   // L31
+   L31 = L[6] = invL11 * M[6];
+   
+   // L32
+   L32 = L[7] = ( 1.0 / L22 ) * ( M[7] - L31 * L21 );
+   
+   if ( M[8] - L32 * L32 - L31 * L31 < 0 ) return false; // leave the 0-case in to tell us if the matrix is singular
+   
+   L33 = L[8] = sqrt( M[8] - L32 * L32 - L31 * L31 );
+   
+   L[1] = L[2] = L[5] = 0;
+   
+   return true;
+}
+
 
 
 // This is the "templated" version of Rosten's code in OpenCV terms.
