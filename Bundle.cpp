@@ -353,39 +353,31 @@ bool Bundle::Do_LM_Step(bool *pbAbortSignal)
     for( iBAPoint = mvPoints.begin(); iBAPoint != mvPoints.end(); iBAPoint++) {
 	  
       cv::Matx<float, 3, 3> m3VStar = iBAPoint->m3V; 
+      // augmenting the diagonal now
+      m3VStar(0, 0) *= (1.0 + mdLambda); m3VStar(1, 1) *= (1.0 + mdLambda); m3VStar(2, 2) *= (1.0 + mdLambda);
+	
       
       // CASE #1 : if V* is NOT Positive Semi-Definite, we zero the inverse. 
-      if(m3VStar(0, 0) * m3VStar(1, 1) * m3VStar(2, 2) == 0 )
+      float dummy[9];
+      if ( !CvUtils::M3PSD_LT_Cholesky<>(m3VStar.val, dummy) ) // checking if B is a PSD matrix (it should be if 
+								// matrix multiplications are correct. In the worst case )
+    
+      //if (m3VStar(0, 0) * m3VStar(1, 1) == 0 )  // This is an alternative (weaker) condition for non PSD matrix but it should work as well here.
       {
 	  iBAPoint->m3VStarInv = cv::Matx<float, 3, 3>::zeros();
+	  cout <<"*********************** NOT a PSD matrix!!! ***************************"<<endl;
       }
       else 
       {
-	       
-	// augmenting the diagonal now (didn't make sense doing so prior to the check for PSD
-	m3VStar(0, 0) *= (1.0 + mdLambda); m3VStar(1, 1) *= (1.0 + mdLambda); m3VStar(2, 2) *= (1.0 + mdLambda);
-	      
-	// CASE #2: Determinant is very small. Use the Moore-Penrose inverse (SVD based computation)
+	          
+	// CASE #2: Determinant is very small. Again zero the inverse
 	if ( fabs(CvUtils::M3Symm_LT_Det( m3VStar.val ) ) < 10e-5) 
 	{
 		
-	  // We now HAVE to fill-in the Upper triangle in order to do the SVD...
-	  m3VStar(0, 1) = m3VStar(1, 0);
-	  m3VStar(0, 2) = m3VStar(2, 0);
-	  m3VStar(1, 2) = m3VStar(2, 1);
-	      
-	  // using the pseudo inverse (this very rarely happens, but it CAN happen)
-	  cv::Matx<float, 3, 3> U_, Vt_;
-	  cv::Matx<float, 3, 1> w_;
-	  cv::SVD::compute(m3VStar, w_, U_, Vt_);
-	  cv::Matx<float, 3, 3> S_;
-	  for (int d_ = 0; d_<3; d_++) {
-	    S_(d_, 0) = S_(d_, 1) = S_(d_, 2) = 0;
-	    if (w_(d_, 0) != 0) S_(d_,d_) = 1.0 / w_(d_, 0);
-		  
-	  }
-	  iBAPoint->m3VStarInv = Vt_.t()*S_*U_.t(); 
-	  cout <<"Non-Invertible V*!"<<endl;
+	  // Zero the inversew in this case too. If V* is nearly non-invertible, this
+	  // most probably means that the accumulated gradients are vanishing and therefore the points are well in place...
+	  iBAPoint->m3VStarInv = cv::Matx<float, 3, 3>::zeros();
+	  cout <<"Points have vanishing gradients (accumulated in V*) !!!"<<endl;
 	}
 	else // CASE #3: Use the standard (adjoint) inversion formula for 3x3 symmetric matrices
 	{
