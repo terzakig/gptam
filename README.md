@@ -3,9 +3,9 @@
 
 This real-time Visual SLAM application is a deep code modification of the brilliant original work by Klein and Murray , "Parallel Tracking and Mapping" (PTAM).
 
-(Very-Very) Brief Overview of the Modifications
+Brief Overview of the Additions / Modifications
 -----------------------------------------------
-Although this certainly looks like PTAM, **it is however a major line-to-line hack and despite many similarities (mainly in the interface), it is not the original code in many ways**:
+Although this certainly looks like PTAM, **it is however a major line-to-line hack and despite many similarities (mainly in the interface), it is not the original code in many ways**. In fact, what is mostly inherited from the original is the OpenGL based interface. Vision algorithms have been re-written either on the basis of the original or completely from scratch:
 
 1. __Algorithmic Alterations__: Many changes were made to the code that implements casual (but certainly non-trivial) SLAM-stuff such as Gauss-Newton optimization, point triangulation, SLAM initialization, etc. 
 
@@ -30,6 +30,8 @@ A few more alterations that I can think of are,
 * The **bundle adjuster** is effectively the same, although a lot of changes in the code were made. I added a more elaborate condition to che check **whether the `V*` matrix is Positive Semidefinite (PSD)** using a simple implementation of the Cholesky demposition for 3x3 PSD matrices. Also, there is an extra check for **near-zero deterninant** in order to potentially capture vanishing gradient effects on the subsequent positive smidefitiveness of the the matrix `S`. All in all, this condition seems to yield more stable camera pose estimates when not many features are visible. Other changes concern the **filling of matrix S and vector e**; **I tried to avoid nested loops and most of the computations is now performed using the fast `cv::Matx` and `cv::Vec` objects instead of `cv::Mat_` matrices.** 
 
 * In method `MakeTemplateCoarse` of the `Patchfinder`, the original code invoked first the creation of the warpping matrix and thereafter created the template using the precalculated warp. **The problem was, that in rare but not entirely unlikely occasions, the warping matrix could be singular because the tracker initiates the call (to `MakeTemplateCoarse` ) before it has managed to cherry-pick points**; thus, its is possible that a singular warping matrix can be passed to MakeTemplateCoarseCont thereby causing assertion trigger and subsequent halting of execution. **I just added an "if" that prevents the passing of the warping matrix if the "templateBad" flag has been raised by `CalcSearchLevelAndWarpMatrix`**. Of course, this is not a major change, but it really took me a while to spot this bugger and from what I see, it has survided up until now in the ETH version as well.  
+
+* I created an interface class `Initializer` that defines the generic structure of a SLAM initialization method and added am Essential matrix based `Initializer` called `EssentialInit`. Thus PTAM can be initialized in a generic scene that does not necessarilly contains dominant plane. Of course, a dominant plane will always be computed based om the reconstructed points, but it will probably be a bad linear fit to the point cloud and will appear as a skewed plane.  
 
 
 In general, there have been many such similar alterations (perhaps improvements) while converting the entire code and I really cant enumerate each and every one here... It should be noted that in the context of these changes, I really HAD to change the names of certain variables and functions because they were simply pointing at the wrong direction. For instance, a name "MakeTemplateSubPix" is a misleading name for a function that simply computes a Jacobian Gram-matrix accumulator (it was renamed to "PrepGNSubPixStep" which - in my opinion - is much closer to what the method actually does). However, I should point-out that most variable names were extremely well chosen and not only I kept them, but I was heavily influenced in adopting the exact same (or similar) naming conventions. 
@@ -62,12 +64,14 @@ c) Persistence : This directory contains code that implements functionality of G
 INSTALLATION
 ------------
 
-** Well, you just need OpenGL and OpenCV and then "cmake ." in the root directory followed by a "make".
+** The necessary dependencies are OpenGL and OpenCV.  
 
-** I wasn't able to "automate" the OpenCV library settings, so I hard-coded the paths which are the usuals: /usr/local/lib and usr/ local/include. If they are found 
+** To compile, create a directory ``build``in the root directory of GPTAM, enter it with ``cd build`` and run ``cmake ..``  followed by a ``make``.
 
-
-** Bear in mind that this is Opencv 2.4.13. I am not sure if this code will work with anything earlier than that..
+** I wasn't able to "automate" the OpenCV library settings, so I hard-coded the paths in the ``CMakeLists.txt`` which are the usuals: /usr/local/lib and usr/ local/include.  
   
+RUNNING PTAM
+------------
+In the root directory you will find a fiile ``calibrator_settings.cfg`` containing the settings of the calibrator, including the initial parameters of the camera. The calibrator will use default settings if the respective file is not found. 
 
-** I have a compile flag for C++14, but I suspect C++11 will do as well.
+PTAM however requires the camera intrinsic and distortion parameters to be stored in a file named ``camera.cfg``. You will haveto create this file with the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
