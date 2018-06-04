@@ -8,8 +8,6 @@
 #include "MapMaker.h"
 #include "MapPoint.h"
 #include "Bundle.h"
-#include "PatchFinder.h"
-#include "HomographyInit.h"
 
 #include "GCVD/image_interpolate.h"
 #include "Persistence/instances.h"
@@ -423,7 +421,7 @@ cv::Vec<float, 3> MapMaker::ReconstructPoint2Views(SE3<float> se3AfromB,    // r
 
 // InitFromStereo() generates the initial match from two keyframes
 // and a vector of image correspondences. Uses the 
-bool MapMaker::InitFromStereo(KeyFrame::Ptr pkF,     // First KF
+/*bool MapMaker::InitFromStereo(KeyFrame::Ptr pkF,     // First KF
 			      KeyFrame::Ptr pkS,     // Second KF
 			      vector<pair<cv::Point2i, cv::Point2i> > &vTrailMatches, // image correspondences
 			      SE3<> &se3TrackerPose  // This is the second camera pose referenced... 
@@ -676,7 +674,7 @@ bool MapMaker::InitFromStereo(KeyFrame::Ptr pkF,     // First KF
   
   cout << "  MapMaker: made initial map with " << mMap.vpPoints.size() << " points." << endl;
   return true; 
-}
+} */
 
 // ThinCandidates() Thins out a key-frame's candidate list.
 // Candidates are those salient corners where the mapmaker will attempt 

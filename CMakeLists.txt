@@ -34,7 +34,7 @@ set( OpenCV_LIBS
 	"/usr/local/lib/libopencv_stitching.so"
 	"/usr/local/lib/libopencv_superres.so"
 	"/usr/local/lib/libopencv_video.so"
-	#"/usr/local/lib/libopencv_videoio.so"
+	"/usr/local/lib/libopencv_videoio.so"
 	"/usr/local/lib/libopencv_videostab.so"
 	
 )
@@ -91,6 +91,8 @@ set(GPTAM_PROJ_SOURCE
 	${CMAKE_SOURCE_DIR}/Tracker.cpp
 	${CMAKE_SOURCE_DIR}/Relocaliser.cpp
 	${CMAKE_SOURCE_DIR}/HomographyInit.cpp
+	${CMAKE_SOURCE_DIR}/EssentialInit.cpp
+	
 	${CMAKE_SOURCE_DIR}/Bundle.cpp
 	${CMAKE_SOURCE_DIR}/MiniPatch.cpp
 	${CMAKE_SOURCE_DIR}/ShiTomasi.cpp
@@ -147,11 +149,13 @@ set(GPTAM_PROJ_INCLUDE
 	${CMAKE_SOURCE_DIR}/Tracker.h
 	${CMAKE_SOURCE_DIR}/Relocaliser.h
 	${CMAKE_SOURCE_DIR}/HomographyInit.h
+	${CMAKE_SOURCE_DIR}/EssentialInit.h
+	${CMAKE_SOURCE_DIR}/Initializer.h
+	
 	${CMAKE_SOURCE_DIR}/Bundle.h
 	${CMAKE_SOURCE_DIR}/MiniPatch.h
 	${CMAKE_SOURCE_DIR}/ShiTomasi.h
 	${CMAKE_SOURCE_DIR}/SmallBlurryImage.h
-	
 	
 	${CMAKE_SOURCE_DIR}/EyeGame.h
 	${CMAKE_SOURCE_DIR}/GLWindow2.h
@@ -176,6 +180,9 @@ set(GPTAM_PROJ_INCLUDE
 	${CMAKE_SOURCE_DIR}/GCVD/GLHelpers.h
 	${CMAKE_SOURCE_DIR}/GCVD/GraphSLAM.h
 	${CMAKE_SOURCE_DIR}/GCVD/timer.h
+	
+	${CMAKE_SOURCE_DIR}/GCVD/Quaternion.h
+	${CMAKE_SOURCE_DIR}/GCVD/Geometry2views.h
 	
 	${CMAKE_SOURCE_DIR}/Persistence/default.h
 	${CMAKE_SOURCE_DIR}/Persistence/serialize.h

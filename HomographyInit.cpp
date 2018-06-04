@@ -9,8 +9,7 @@
 
 #include <utility>
 
-#include "GCVD/Addedutils.h"
-#include "GCVD/SE3.h"
+
 
 //#include "GCVD/GraphSLAM.h"
 #include "MEstimator.h"
@@ -21,7 +20,7 @@ using namespace std;
 
 // This function marks a homography match as inliner by simply checking if 
 // the first point is projected to a second point with error below the MLESAC threshold...
-inline bool HomographyInit::IsHomographyInlier(cv::Matx<float, 3, 3> m3Homography, HomographyMatch match) {
+inline bool HomographyInit::IsHomographyInlier(cv::Matx<float, 3, 3> m3Homography, InitializerMatch match) {
   
   
   cv::Vec2f v2Projected = CvUtils::pproject(  m3Homography * CvUtils::backproject(match.v2EucPlaneFirst) );
@@ -34,7 +33,7 @@ inline bool HomographyInit::IsHomographyInlier(cv::Matx<float, 3, 3> m3Homograph
   return (dSquaredError < mdMaxPixelErrorSquared); 
 }
 
-inline double HomographyInit::MLESACScore(cv::Matx<float, 3, 3> m3Homography, HomographyMatch match) {
+inline double HomographyInit::MLESACScore(cv::Matx<float, 3, 3> m3Homography, InitializerMatch match) {
   
   cv::Vec2f v2Projected = CvUtils::pproject( m3Homography * CvUtils::backproject(match.v2EucPlaneFirst) );
   //cv::Vec2f v2Error = match.v2EucPlaneSecond - v2Projected;
@@ -47,7 +46,7 @@ inline double HomographyInit::MLESACScore(cv::Matx<float, 3, 3> m3Homography, Ho
   return dSquaredError > mdMaxPixelErrorSquared ? mdMaxPixelErrorSquared : dSquaredError;
 }
 
-bool HomographyInit::Compute(vector<HomographyMatch> vMatches, double dMaxPixelError, SE3<> &se3SecondFromFirst)
+bool HomographyInit::Compute(vector<InitializerMatch> vMatches, double dMaxPixelError, SE3<> &se3SecondFromFirst)
 {
   mdMaxPixelErrorSquared = dMaxPixelError * dMaxPixelError;
   mvMatches = vMatches;
@@ -98,7 +97,7 @@ bool HomographyInit::Compute(vector<HomographyMatch> vMatches, double dMaxPixelE
 
 // Just compute the homography out of a set of matches (N >= 4)
 // using the classic homogeneous LS method
-cv::Matx<float, 3, 3> HomographyInit::HomographyFromMatches(vector<HomographyMatch> vMatches)
+cv::Matx<float, 3, 3> HomographyInit::HomographyFromMatches(vector<InitializerMatch> vMatches)
 {
   unsigned int nPoints = vMatches.size();
   assert(nPoints >= 4);
@@ -201,9 +200,9 @@ void HomographyInit::RefineHomographyWithInliers()
       //cv::Vec2f v2m2 = mvHomographyInliers[i].v2EucPlaneSecond;                // The measured normalized Euclidean coordinate 
       
       
-      // The original PTAM error doesn't make any sense to me anyway I may look at it... Perhaps only as an approximation...
-      // YES, I AGREE we DO need a projection derivative, but NOT the cached ones by the MapMaker, because
-      // they simply DO NOT correspond to the projection derivatives of the prediction on the image.
+      // The original PTAM error doesn't feel entirely sane however I may look at it... Perhaps only as an approximation...
+      // I agree we do need a projection derivative, but the cannopt be the cached ones by the MapMaker, because
+      // they simply do not correspond to the projection derivatives of the prediction on the image.
       // We therefore need to do mCamera.Project (which implies referencing camera object from 
       // the homography  initializer) and THEN, ONLY THEN, compute the derivatives - which will only be necessary for the Jacobian 
       // and NOT for the error computation!
@@ -213,7 +212,7 @@ void HomographyInit::RefineHomographyWithInliers()
       //DEPRECATED ERROR: cv::Vec2f v2Error = mvHomographyInliers[i].m2PixelProjectionJac * (v2m2 - v2Second);
       
       // *************** The NEW ERROR *******************
-      // NOTE!!! we now need to project the prediction on the image first!!!
+      // NOTE!!! we now need to project the prediction on the image first.
       
       cv::Vec2f v2p2_pred = pCamera->Project(v2m2_pred); // n.b. this projection will now cache the necessary results for GetProjectionDerivs()...
       // caching the correct projection derivatives now!
@@ -435,7 +434,7 @@ void HomographyInit::BestHomographyFromMatches_MLESAC()
   // Do 300 MLESAC trials.
   for(int nR = 0; nR < 300 ; nR++) { 
       // sampling four uniquedata indexes to fit a homography
-      vector<HomographyMatch> vMinimalMatches;
+      vector<InitializerMatch> vMinimalMatches;
       for(int i=0; i<4; i++) {
 	
 	  bool isUnique = false; // indicates unique sample index
@@ -450,11 +449,6 @@ void HomographyInit::BestHomographyFromMatches_MLESAC()
 	  anIndices[i] = n;
 	  vMinimalMatches.push_back(mvMatches[n]);
       }
-      // create the respecto
-      /*vector<HomographyMatch> vMinimalMatches;
-      for(int i=0; i<4; i++)
-	vMinimalMatches.push_back(mvMatches[anIndices[i]]);
-      */
       
       // Compute the homography now...
       cv::Matx<float, 3, 3> m3Homography = HomographyFromMatches(vMinimalMatches);
@@ -904,7 +898,7 @@ void HomographyInit::ChooseBestDecomposition()
   assert(mvDecompositions.size() >1);
   // TEST #1: Punish homographies that map points out of the screen
   for(unsigned int i=0; i<mvDecompositions.size(); i++) {
-    
+     
       HomographyDecomposition &decom = mvDecompositions[i];
       int nPositive = 0;
       for(unsigned int m=0; m<mvHomographyInliers.size(); m++) {
@@ -912,8 +906,8 @@ void HomographyInit::ChooseBestDecomposition()
 	  cv::Vec2f v2 = mvHomographyInliers[m].v2EucPlaneFirst;
 	  // Testing for positive depth of the feature
 	  double dVisibilityTest = mm3BestHomography(2, 0) * v2[0] + 
-				    mm3BestHomography(2, 1) * v2[1] + 
-				    mm3BestHomography(2, 2) ;// / decom.d;
+				   mm3BestHomography(2, 1) * v2[1] + 
+				   mm3BestHomography(2, 2) ;// / decom.d;
 	  // increase positive count
 	  if(dVisibilityTest > 0.0) nPositive++;
       }

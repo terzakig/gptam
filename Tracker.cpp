@@ -1,8 +1,10 @@
+//
+//
 // ************ George Terzakis 2016 ***********
 //
 //           U&niversity of Portsmouth 
 //
-// Code based on PTAM by Klein and Murray( opyright 2008 Isis Innovation Limited )
+// Code based on PTAM by Klein and Murray
 
 #include "OpenGL.h"
 #include "Tracker.h"
@@ -11,6 +13,10 @@
 
 #include "PatchFinder.h"
 #include "TrackerData.h"
+
+// The two possible map initializers:
+#include "HomographyInit.h"   // homography initializer 
+#include "EssentialInit.h"    // essential matrix initializer (used below, but could be changed)
 
 #include "OpenCV.h"
 #include "OpenGL.h"
@@ -395,7 +401,11 @@ void Tracker::TrackForInitialMap()
 	  for(list<Trail>::iterator i = mlTrails.begin(); i!=mlTrails.end(); i++)
 	    vMatches.push_back(pair<cv::Point2i, cv::Point2i>(i->irInitialPos, i->irCurrentPos));
 	  // Alright! Here comes the hot stuff: 2-view Camera pose and structure estimation...
-	  mMapMaker.InitFromStereo(pFirstKF, pCurrentKF, vMatches, mse3CamFromWorld);  // This will take some time!
+	  //
+	  // NOTE: Using the new templated InitFronStereo with the Essential Matrix Initializer
+	  ///      Feel free to change back to homography, but it really works better!
+	  //
+	  mMapMaker.InitFromStereo<EssentialInit>(pFirstKF, pCurrentKF, vMatches, mse3CamFromWorld);  
 	  mnInitialStage = TRAIL_TRACKING_COMPLETE;
 	  //cout <<"completed trail tracking and initialized from stereo! " <<endl;
       }
