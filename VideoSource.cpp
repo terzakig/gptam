@@ -32,8 +32,8 @@ VideoSource::VideoSource()
 
   std::cout << "  Now capturing...." << std::endl;
   // obtaining the capture size
-  int width = (int)pcap->get(CV_CAP_PROP_FRAME_WIDTH);
-  int height = (int)pcap->get(CV_CAP_PROP_FRAME_HEIGHT);
+  int width = (int)pcap->get(cv::CAP_PROP_FRAME_WIDTH);
+  int height = (int)pcap->get(cv::CAP_PROP_FRAME_HEIGHT);
   mirSize = cv::Size2i(width, height);
   cout << " Screen size (width , height) : " << width << " , " <<height <<endl;
 };
