@@ -10,7 +10,7 @@
 // E is parametrized with stereographic parameters
 
 #include "EssentialInit.h"
-#include "./GCVD/Geometry2views.h"
+#include "GCVD/Geometry2views.h"
 
 #include <utility>
 
