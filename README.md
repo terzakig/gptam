@@ -74,4 +74,4 @@ RUNNING PTAM
 ------------
 In the root directory you will find a fiile ``calibrator_settings.cfg`` containing the settings of the calibrator, including the initial parameters of the camera. The calibrator will use default settings if the respective file is not found. 
 
-PTAM however requires the camera intrinsic and distortion parameters to be stored in a file named ``camera.cfg``. You will haveto create this file with the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
+PTAM however requires the camera intrinsic and distortion parameters to be stored in a file named ``settings.cfg``. You will haveto fill this file with the intrinsic parameters provided by the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
