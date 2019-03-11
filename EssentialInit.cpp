@@ -642,7 +642,7 @@ void EssentialInit::BestEssentialFromMatches_MLESAC() {
   }
   
   // Otherwise do the RANSAC...
-  int anIndices[4];
+  int anIndices[8];
   
   double dBestError = 999999999999999999.9;
   
