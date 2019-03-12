@@ -305,7 +305,7 @@ void EssentialInit::RefineEssentialWithInliers(int maxIteration) {
     // temporary solution
     cv::solve(m5Omega, v5ksi, v5Update, cv::DECOMP_CHOLESKY);
     cv::Vec<float, 5> mutemp = mu + v5Update;
-    Quaternion<> qtmp( mutemp.val ); // the method will only access 
+    Quaternion<> qtmp = Quaternion<>::CreateFromMRPs(mutemp.val); // the method will only access the first 3 SOP parameters
     cv::Vec<float, 3> btmp( 2 * mutemp[3], 2 * mutemp[4] , 1 - mutemp[3]*mutemp[3] - mutemp[4]*mutemp[4]); btmp = (1.0 / (1.0 + mutemp[3]*mutemp[3] + mutemp[4]*mutemp[4] ) ) * btmp;  
     cv::Matx<float, 3, 3> Bxtmp = TwoViewGeometry::CrossPoductMatrix(btmp);
     cv::Matx<float, 3, 3> Rtmp; qtmp.RotationMatrix(Rtmp.val); 
