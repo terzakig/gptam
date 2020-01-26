@@ -83,4 +83,4 @@ specifies camera #1 to be the device use by the capture object.
 
 Note that PTAM requires the camera intrinsic and distortion parameters to be stored in a file named ``settings.cfg``. You will have to fill this file with the intrinsic parameters provided by the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
 
-Examples of ``calibrato_settings.cfg`` and ``settings.cfg`` are now stored in the root directory of the repository.
+Examples of ``calibrator_settings.cfg`` and ``settings.cfg`` are now stored in the root directory of the repository.
