@@ -20,7 +20,7 @@ class CameraCalibrator
 {
 public:
   
-  CameraCalibrator();
+  CameraCalibrator(int camera_index = -1);
   void Run();
   
   

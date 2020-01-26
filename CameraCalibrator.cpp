@@ -48,7 +48,10 @@ int main()
   
   try {
     
-      CameraCalibrator c;
+      //
+      // Obtain the camera index (default: -1) from the settings file
+      int camera_index = PV3::get<int >("Camera.Index", -1, HIDDEN);
+      CameraCalibrator c(camera_index);
       
       c.Run();
     }
@@ -68,7 +71,7 @@ int main()
 
 
 
-CameraCalibrator::CameraCalibrator() : mGLWindow(mVideoSource.getSize(), "Camera Calibrator"), mCamera("Camera", mVideoSource.getSize())
+CameraCalibrator::CameraCalibrator(int camera_index) : mVideoSource(camera_index), mGLWindow(mVideoSource.getSize(), "Camera Calibrator"), mCamera("Camera", mVideoSource.getSize())
 {
   
   
