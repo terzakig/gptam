@@ -72,6 +72,15 @@ INSTALLATION
   
 RUNNING PTAM
 ------------
-In the root directory you will find a fiile ``calibrator_settings.cfg`` containing the settings of the calibrator, including the initial parameters of the camera. The calibrator will use default settings if the respective file is not found. 
+In the root directory you will find a fiile ``calibrator_settings.cfg`` containing the settings of the calibrator, including the initial parameters of the camera. The calibrator will use default settings if the respective file is not found.
 
-PTAM however requires the camera intrinsic and distortion parameters to be stored in a file named ``settings.cfg``. You will haveto fill this file with the intrinsic parameters provided by the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
+To specify which camera to use, specify the corrsponding index (-1 for default and 0, 1, 2, ... for other USB cameras) in the settings file (in both the calibrator and PTAM settings). For example, the following line,
+
+``
+Camera.Index=1
+`` 
+specifies camera #1 to be the device use by the capture object.
+
+Note that PTAM requires the camera intrinsic and distortion parameters to be stored in a file named ``settings.cfg``. You will have to fill this file with the intrinsic parameters provided by the calibrator. After saving the calibrated parameters, they should be stored a file named ``camera.cfg``. Simply rename this file to ``settings.cfg`` and you should be able to run ``gptam`` with the calibrated camera.  
+
+Examples of ``calibrato_settings.cfg`` and ``settings.cfg`` are now stored in the root directory of the repository.
