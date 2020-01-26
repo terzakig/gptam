@@ -27,15 +27,17 @@ class MapViewer;
 class System
 {
 public:
-  System();
+  System(int camera_index = -1);
   void Run();
   
 private:
+  int camera_index_;
   VideoSource mVideoSource;
   GLWindow2 mGLWindow;
   cv::Mat mimFrameRGB;
   cv::Mat_<uchar> mimFrameBW;
   
+
   Map *mpMap; 
   MapMaker *mpMapMaker; 
   Tracker *mpTracker; 

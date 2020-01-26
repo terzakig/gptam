@@ -3,7 +3,7 @@
 //          University of Portsmouth
 //
 //
-// Based on the original PTAM code by Klein and Murrary (Copyright 2008 Isis Innovation Limited)
+// Based on the original PTAM code by Klein and Murray (Copyright 2008 Isis Innovation Limited)
 //
 //
 
@@ -24,7 +24,7 @@ using namespace std;
 using namespace Persistence;
 
 
-System::System() : mGLWindow(mVideoSource.getSize(), "PTAM")
+System::System(int camera_index) : mVideoSource(camera_index), mGLWindow(mVideoSource.getSize(), "PTAM")
 {
   GUI.RegisterCommand("exit", GUICommandCallBack, this);
   GUI.RegisterCommand("quit", GUICommandCallBack, this);
@@ -32,8 +32,11 @@ System::System() : mGLWindow(mVideoSource.getSize(), "PTAM")
   // First, check if the camera is calibrated.
   // If not, we need to run the calibration widget.
   cv::Vec<float, NUMTRACKERCAMPARAMETERS> vTest = PV3::get<cv::Vec<float, NUMTRACKERCAMPARAMETERS> >("Camera.Parameters", ATANCamera::mvDefaultParams, HIDDEN);
+  
+  
   mpCamera = new ATANCamera("Camera");
   cv::Vec2f v2(0 , 0);
+  
   if(v2==v2) ;
   if(vTest == ATANCamera::mvDefaultParams) {
       cout << endl;

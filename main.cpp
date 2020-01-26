@@ -32,7 +32,10 @@ int main(int argc, char** argv)
 
   try
   {
-    System s;
+    //
+    // Obtain the camera index (default: -1) from the settings file
+    int camera_index = PV3::get<int >("Camera.Index", -1, HIDDEN);
+    System s(camera_index);
     s.Run();
   }
   catch(cv::Exception e) {

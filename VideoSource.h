@@ -21,13 +21,14 @@ struct VideoSourceData;
 class VideoSource
 {
  public:
-  VideoSource();
+  VideoSource(int camera_index = -1);
   
   void GetAndFillFrameBWandRGB(cv::Mat_<uchar> &imBW, cv::Mat &imRGB);
   
   cv::Size2i getSize();
   
  private:
+  int camera_index_;
   cv::VideoCapture *pcap;
   
   cv::Size2i mirSize;
