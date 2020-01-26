@@ -810,57 +810,24 @@ void CalibImage::GuessInitialPose(ATANCamera &Camera)
   m3Homography(1, 0) = Vt(8, 3); m3Homography(1, 1) = Vt(8, 4); m3Homography(1, 2) = Vt(8, 5);
   m3Homography(2, 0) = Vt(8, 6); m3Homography(2, 1) = Vt(8, 7); m3Homography(2, 2) = Vt(8, 8);
   
-  //cout <<"Difference between homographies "<<m3H - cv::Mat(m3Homography)<<endl;
-  
+
   // Fix up possibly poorly conditioned bits of the homography
   // This appears to be essentially the scaling-down of the homography by the largest singular values of its upper- left 2x2 block
-  {
-    cv::Matx<double, 2, 2> Htl = m3Homography.get_minor<2, 2>(0, 0);
+ 
+  cv::Matx<double, 2, 2> Htl = m3Homography.get_minor<2, 2>(0, 0);
     
-    cv::Matx<double, 2, 1> v2Diagonal;
-    cv::Matx<double, 2, 2> v2Vt;
-    cv::Matx<double, 2 , 2> v2U;
+  cv::Matx<double, 2, 1> v2Diagonal;
+  cv::Matx<double, 2, 2> v2Vt;
+  cv::Matx<double, 2 , 2> v2U;
     
-    cv::SVD::compute(Htl, v2Diagonal, v2U, v2Vt); 
-    double smax = v2Diagonal(0,0);
+  cv::SVD::compute(Htl, v2Diagonal, v2U, v2Vt); 
+  double smax = v2Diagonal(0,0);
     
      
-    // scaling down the entire homography by the largest singular value of H11
-    m3Homography = (1 / smax) * m3Homography ;
-    // scaling down the singular values as well...
-    v2Diagonal = (1 / smax) * v2Diagonal;
-    // store second largest singular value in dLambda2
-    double dLambda2 = v2Diagonal(1, 0);
+  // scaling down the entire homography by the largest singular value of H11
+  m3Homography = (1 / smax) * m3Homography ;
     
-    // *********** I am keeping old PTAM instructions in comments for double-checking in order to be on the safe side. 
-    // *********** Pose extraction from homography entails ambiguities and the slighhtest mistakes can make one's life really mizerable...
-    
-    // v2b is one hypothesis for v2b ; the other is the negative.
-    cv::Vec2d v2b( 0.0,
-		   sqrt( 1.0 - (dLambda2 * dLambda2)) ); 
-    
-    //Vector<2> v2aprime = v2b * svdTopLeftBit.get_VT();
-    cv::Vec2d v2aprime(v2b[0] * Vt(0,0) + v2b[1] * Vt(1, 0), 
-		       v2b[0] * Vt(0,1) + v2b[1] * Vt(1, 1) );
-    
-    
-    //Vector<2> v2a = m3Homography[2].slice<0,2>();
-   
-    // double dDotProd = v2a * v2aprime;
-    double dDotProd = m3Homography(2, 0) * v2aprime[0] + m3Homography(2, 1) * v2aprime[1];
-    
-    if(dDotProd>0) {
-      //m3Homography[2].slice<0,2>() = v2aprime;
-      m3Homography(2, 0) = v2aprime[0]; m3Homography(2, 1) = v2aprime[1];
-    }
-    else {
-      //m3Homography[2].slice<0,2>() = -v2aprime;
-      m3Homography(2, 0) = -v2aprime[0]; m3Homography(2, 1) = -v2aprime[1];
-    }
-      
-  }
-  
-  
+
   // OK, now turn homography into something 3D ...simple gram-schmidt ortho-norm
   // Take 3x3 matrix H with column: abt
   // And add a new 3rd column: abct
@@ -900,17 +867,43 @@ void CalibImage::GuessInitialPose(ATANCamera &Camera)
   vTranslation[0] =  m3Homography(0, 2);
   vTranslation[1] =  m3Homography(1, 2);
   vTranslation[2] =  m3Homography(2, 2);
-  
-  
-  
-  
+
+  int negative_depth_counter = 0, 
+  positive_depth_counter = 0;
+  for(int n=0; n<nPoints; n++) 
+  {
+
+    // Then fill in the matrix..
+    double X = mvGridCorners[n].irGridPos.x; // corner x-location in the grid! (assuming unit length in the grid!)
+    double Y = mvGridCorners[n].irGridPos.y; // corner y-locatin in the grid!  
+
+    cv::Vec<double, 3> Mc = m3Homography * cv::Vec<double, 3>(X, Y, 0);
+  	if (Mc[2] < 0) 
+  	{
+  	  negative_depth_counter++;
+  	}
+  	else
+  	{
+  	  positive_depth_counter++;
+  	}
+  }
+
+  if (negative_depth_counter > positive_depth_counter)
+  {
+  	// Negate first and second column of rotation
+  	mRotation(0, 0) *=-1; mRotation(0, 1) *=-1;
+  	mRotation(1, 0) *=-1; mRotation(1, 1) *=-1;
+  	mRotation(2, 0) *=-1; mRotation(2, 1) *=-1;
+
+  	// And negate the translation
+  	vTranslation = -vTranslation;
+  }
+
   // Finally, store everything in the SE3 object the takes world points to the camera
   mse3CamFromWorld.get_rotation().get_matrix() = mRotation;
   mse3CamFromWorld.get_translation() = vTranslation;
 
-  //cout << "recovered rotation : " << mse3CamFromWorld.get_rotation().get_matrix() << endl;
-  //cout << "recovered translation : " << mse3CamFromWorld.get_translation() << endl;
-  
+
 }
 
 
